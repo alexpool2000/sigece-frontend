@@ -1,0 +1,2 @@
+.col { display: flex; flex-direction: column; gap: 8px; padding-top: 8px; min-width: 320px; }
+.nota { font-size: 12px; opacity: .7; margin: 0; }

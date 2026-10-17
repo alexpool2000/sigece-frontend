@@ -1,0 +1,8 @@
+.menu-usuario {
+  --mat-menu-container-color: #ffffff;
+  --mat-menu-container-shape: 8px;
+  --mat-menu-item-label-text-color: #1f2a44;
+  --mat-menu-item-icon-color: royalblue;
+  --mat-menu-item-hover-state-layer-color: rgba(65, 105, 225, 0.12);
+  --mat-menu-item-focus-state-layer-color: rgba(65, 105, 225, 0.12);
+}

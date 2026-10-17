@@ -1,0 +1,48 @@
+<div class="cab">
+  <h2>Tipos de incidencia</h2>
+  @if (puedeEditar) {
+    <button mat-flat-button (click)="abrirForm(null)"><mat-icon>add</mat-icon> Nuevo tipo</button>
+  }
+</div>
+<p class="ayuda">El tipo no define la gravedad: esta se registra aparte en cada incidencia. Desactivar un tipo no altera el historial.</p>
+
+<div class="filtros">
+  <mat-form-field appearance="outline">
+    <mat-label>Buscar</mat-label>
+    <input matInput (input)="texto.set($any($event.target).value)" />
+    <mat-icon matSuffix>search</mat-icon>
+  </mat-form-field>
+  <mat-form-field appearance="outline">
+    <mat-label>Categoría SíSeVe</mat-label>
+    <mat-select value="" (selectionChange)="categoria.set($event.value)">
+      <mat-option value="">Todas</mat-option>
+      @for (c of categorias; track c) { <mat-option [value]="c">{{ c.replaceAll('_', ' ') }}</mat-option> }
+    </mat-select>
+  </mat-form-field>
+</div>
+
+<div class="tabla">
+  <table mat-table [dataSource]="filtrados()">
+    <ng-container matColumnDef="nombre"><th mat-header-cell *matHeaderCellDef>Nombre</th><td mat-cell *matCellDef="let t">{{ t.nombre }}</td></ng-container>
+    <ng-container matColumnDef="categoria"><th mat-header-cell *matHeaderCellDef>Categoría SíSeVe</th><td mat-cell *matCellDef="let t"><span class="cat">{{ t.categoriaSiseve.replaceAll('_', ' ') }}</span></td></ng-container>
+    <ng-container matColumnDef="descripcion"><th mat-header-cell *matHeaderCellDef>Descripción</th><td mat-cell *matCellDef="let t">{{ t.descripcion || '—' }}</td></ng-container>
+    <ng-container matColumnDef="estado">
+      <th mat-header-cell *matHeaderCellDef>Estado</th>
+      <td mat-cell *matCellDef="let t"><span class="est" [class.off]="!t.activo">{{ t.activo ? 'Activo' : 'Inactivo' }}</span></td>
+    </ng-container>
+    <ng-container matColumnDef="acciones">
+      <th mat-header-cell *matHeaderCellDef></th>
+      <td mat-cell *matCellDef="let t">
+        @if (puedeEditar) {
+          <button mat-icon-button title="Editar" (click)="abrirForm(t)"><mat-icon>edit</mat-icon></button>
+          <button mat-icon-button [title]="t.activo ? 'Desactivar' : 'Reactivar'" (click)="alternar(t)">
+            <mat-icon>{{ t.activo ? 'toggle_on' : 'toggle_off' }}</mat-icon>
+          </button>
+        }
+      </td>
+    </ng-container>
+    <tr mat-header-row *matHeaderRowDef="columnas"></tr>
+    <tr mat-row *matRowDef="let fila; columns: columnas"></tr>
+    <tr class="mat-row" *matNoDataRow><td class="vacio" [attr.colspan]="columnas.length">{{ datos() ? 'Sin resultados' : 'Cargando…' }}</td></tr>
+  </table>
+</div>

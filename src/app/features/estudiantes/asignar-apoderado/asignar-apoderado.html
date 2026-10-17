@@ -1,0 +1,32 @@
+<h2 mat-dialog-title>Asignar apoderado</h2>
+<mat-dialog-content>
+  <form [formGroup]="form" class="col">
+    <mat-form-field appearance="outline">
+      <mat-label>Buscar apoderado (nombre o documento)</mat-label>
+      <input matInput formControlName="apoderado" [matAutocomplete]="auto" />
+      <mat-autocomplete #auto="matAutocomplete" [displayWith]="mostrar">
+        @for (a of opciones(); track a.id) {
+          <mat-option [value]="a">{{ a.apellidos }}, {{ a.nombres }} · {{ a.numeroDocumento }}</mat-option>
+        }
+      </mat-autocomplete>
+      <mat-hint>¿No existe? Regístrelo primero en Apoderados.</mat-hint>
+      <mat-error>Seleccione un apoderado de la lista</mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Parentesco</mat-label>
+      <mat-select formControlName="parentesco">
+        @for (p of parentescos; track p) { <mat-option [value]="p">{{ p.replace('_', ' ') }}</mat-option> }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-checkbox formControlName="esContactoPrincipal">Contacto principal</mat-checkbox>
+    @if (data.tienePrincipal) {
+      <p class="nota">Este estudiante ya tiene un contacto principal. Para cambiarlo, use «Marcar como principal» en la tabla.</p>
+    }
+  </form>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close>Cancelar</button>
+  <button mat-flat-button (click)="guardar()" [disabled]="guardando()">Asignar</button>
+</mat-dialog-actions>

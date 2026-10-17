@@ -1,0 +1,26 @@
+<h2 mat-dialog-title>{{ datos ? 'Editar tipo de incidencia' : 'Nuevo tipo de incidencia' }}</h2>
+<mat-dialog-content>
+  <form [formGroup]="form" class="col">
+    <mat-form-field appearance="outline">
+      <mat-label>Nombre</mat-label>
+      <input matInput formControlName="nombre" />
+      <mat-error>Requerido (máx. 100 caracteres)</mat-error>
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>Categoría SíSeVe</mat-label>
+      <mat-select formControlName="categoriaSiseve">
+        @for (c of categorias; track c) { <mat-option [value]="c">{{ c.replaceAll('_', ' ') }}</mat-option> }
+      </mat-select>
+      <mat-error>Requerida</mat-error>
+    </mat-form-field>
+    <mat-form-field appearance="outline">
+      <mat-label>Descripción (opcional)</mat-label>
+      <textarea matInput rows="3" formControlName="descripcion"></textarea>
+      <mat-error>Máximo 255 caracteres</mat-error>
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close>Cancelar</button>
+  <button mat-flat-button (click)="guardar()" [disabled]="guardando()">Guardar</button>
+</mat-dialog-actions>

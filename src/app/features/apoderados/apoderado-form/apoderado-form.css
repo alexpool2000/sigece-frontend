@@ -1,0 +1,2 @@
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; padding-top: 8px; }
+.nota { font-size: 12px; opacity: .7; margin: 0; }
