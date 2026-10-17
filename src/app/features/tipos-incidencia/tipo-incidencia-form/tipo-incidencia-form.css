@@ -1,1 +1,6 @@
-.col { display: flex; flex-direction: column; padding-top: 8px; min-width: 320px; }
+.col {
+    display: flex;
+    flex-direction: column;
+    padding-top: 8px;
+    min-width: 320px;
+}

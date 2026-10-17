@@ -25,12 +25,30 @@
 
 <div class="tabla">
   <table mat-table [dataSource]="resultado()?.content ?? []">
-    <ng-container matColumnDef="codigo"><th mat-header-cell *matHeaderCellDef>Código</th><td mat-cell *matCellDef="let i">{{ i.codigoCaso }}</td></ng-container>
-    <ng-container matColumnDef="fecha"><th mat-header-cell *matHeaderCellDef>Fecha</th><td mat-cell *matCellDef="let i">{{ i.fechaOcurrencia | date: 'dd/MM/yyyy HH:mm' }}</td></ng-container>
-    <ng-container matColumnDef="estudiantes"><th mat-header-cell *matHeaderCellDef>Estudiante(s)</th><td mat-cell *matCellDef="let i">{{ i.estudiantes.join(', ') }}</td></ng-container>
-    <ng-container matColumnDef="tipo"><th mat-header-cell *matHeaderCellDef>Tipo</th><td mat-cell *matCellDef="let i">{{ i.tipo }}</td></ng-container>
-    <ng-container matColumnDef="gravedad"><th mat-header-cell *matHeaderCellDef>Gravedad</th><td mat-cell *matCellDef="let i"><app-gravedad-chip [valor]="i.gravedad" /></td></ng-container>
-    <ng-container matColumnDef="estado"><th mat-header-cell *matHeaderCellDef>Estado</th><td mat-cell *matCellDef="let i"><app-estado-chip [valor]="i.estado" /></td></ng-container>
+    <ng-container matColumnDef="codigo">
+      <th mat-header-cell *matHeaderCellDef>Código</th>
+      <td mat-cell *matCellDef="let i">{{ i.codigoCaso }}</td>
+    </ng-container>
+    <ng-container matColumnDef="fecha">
+      <th mat-header-cell *matHeaderCellDef>Fecha</th>
+      <td mat-cell *matCellDef="let i">{{ i.fechaOcurrencia | date: 'dd/MM/yyyy HH:mm' }}</td>
+    </ng-container>
+    <ng-container matColumnDef="estudiantes">
+      <th mat-header-cell *matHeaderCellDef>Estudiante(s)</th>
+      <td mat-cell *matCellDef="let i">{{ i.estudiantes.join(', ') }}</td>
+    </ng-container>
+    <ng-container matColumnDef="tipo">
+      <th mat-header-cell *matHeaderCellDef>Tipo</th>
+      <td mat-cell *matCellDef="let i">{{ i.tipo }}</td>
+    </ng-container>
+    <ng-container matColumnDef="gravedad">
+      <th mat-header-cell *matHeaderCellDef>Gravedad</th>
+      <td mat-cell *matCellDef="let i"><app-gravedad-chip [valor]="i.gravedad" /></td>
+    </ng-container>
+    <ng-container matColumnDef="estado">
+      <th mat-header-cell *matHeaderCellDef>Estado</th>
+      <td mat-cell *matCellDef="let i"><app-estado-chip [valor]="i.estado" /></td>
+    </ng-container>
     <ng-container matColumnDef="responsable">
       <th mat-header-cell *matHeaderCellDef>Responsable</th>
       <td mat-cell *matCellDef="let i">
@@ -39,12 +57,15 @@
     </ng-container>
     <ng-container matColumnDef="alertas">
       <th mat-header-cell *matHeaderCellDef></th>
-      <td mat-cell *matCellDef="let i">@if (i.reincidencia) { <mat-icon class="reinc" title="Reincidencia">warning</mat-icon> }</td>
+      <td mat-cell *matCellDef="let i">@if (i.reincidencia) { <mat-icon class="reinc"
+          title="Reincidencia">warning</mat-icon> }</td>
     </ng-container>
 
     <tr mat-header-row *matHeaderRowDef="columnas"></tr>
     <tr mat-row *matRowDef="let fila; columns: columnas" (click)="abrir(fila.id)"></tr>
-    <tr class="mat-row" *matNoDataRow><td class="vacio" [attr.colspan]="columnas.length">{{ resultado() ? 'Sin resultados' : 'Cargando…' }}</td></tr>
+    <tr class="mat-row" *matNoDataRow>
+      <td class="vacio" [attr.colspan]="columnas.length">{{ resultado() ? 'Sin resultados' : 'Cargando…' }}</td>
+    </tr>
   </table>
 </div>
 

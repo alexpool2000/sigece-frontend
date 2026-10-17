@@ -22,7 +22,8 @@ export const routes: Routes = [
       { path: 'apoderados', loadComponent: () => import('./features/apoderados/apoderado-list/apoderado-list').then(m => m.ApoderadoList) },
       { path: 'alertas', loadComponent: page, data: { titulo: 'Alertas (UC-18)' } },
       {
-        path: 'dashboard', loadComponent: page, canActivate: [roleGuard],
+        path: 'dashboard', canActivate: [roleGuard],
+        loadComponent: () => import('./features/dashboard/dashboard/dashboard').then(m => m.Dashboard),
         data: { titulo: 'Dashboard (UC-19)', roles: ['ROLE_DIRECTOR', 'ROLE_COMITE_BIENESTAR'] }
       },
       {

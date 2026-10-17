@@ -1,14 +1,45 @@
-.filtros { display: flex; flex-wrap: wrap; gap: 12px; }
+.filtros {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
 
-/* El buscador crece y ocupa el espacio disponible */
-.filtros .buscar { flex: 1 1 320px; min-width: 200px; max-width: 435px; }
 
-/* El select no necesita tanto */
-.filtros .tipo { flex: 0 0 220px; }
+.filtros .buscar {
+    flex: 1 1 320px;
+    min-width: 200px;
+    max-width: 435px;
+}
 
-.tabla { overflow-x: auto; background: var(--mat-sys-surface); border-radius: 12px; }
-tr.mat-mdc-row { cursor: pointer; }
-tr.mat-mdc-row:hover { background: var(--mat-sys-surface-container); }
-.sin { color: var(--mat-sys-error); font-size: 13px; font-weight: 500; }
-.reinc { color: #ef6c00; }
-.vacio { text-align: center; padding: 24px; }
+.filtros .tipo {
+    flex: 0 0 220px;
+}
+
+.tabla {
+    overflow-x: auto;
+    background: var(--mat-sys-surface);
+    border-radius: 12px;
+}
+
+tr.mat-mdc-row {
+    cursor: pointer;
+}
+
+tr.mat-mdc-row:hover {
+    background: var(--mat-sys-surface-container);
+}
+
+.sin {
+    color: var(--mat-sys-error);
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.reinc {
+    color: #ef6c00;
+}
+
+.vacio {
+    text-align: center;
+    padding: 24px;
+}

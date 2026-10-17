@@ -1,8 +1,10 @@
 <h2 mat-dialog-title>{{ datos ? 'Editar contacto' : 'Nuevo apoderado' }}</h2>
 <mat-dialog-content>
   <form [formGroup]="form" class="grid">
-    <mat-form-field appearance="outline"><mat-label>Nombres</mat-label><input matInput formControlName="nombres" /><mat-error>Requerido</mat-error></mat-form-field>
-    <mat-form-field appearance="outline"><mat-label>Apellidos</mat-label><input matInput formControlName="apellidos" /><mat-error>Requerido</mat-error></mat-form-field>
+    <mat-form-field appearance="outline"><mat-label>Nombres</mat-label><input matInput
+        formControlName="nombres" /><mat-error>Requerido</mat-error></mat-form-field>
+    <mat-form-field appearance="outline"><mat-label>Apellidos</mat-label><input matInput
+        formControlName="apellidos" /><mat-error>Requerido</mat-error></mat-form-field>
     <mat-form-field appearance="outline">
       <mat-label>Tipo de documento</mat-label>
       <mat-select formControlName="tipoDocumento">
@@ -14,8 +16,10 @@
       <input matInput formControlName="numeroDocumento" />
       <mat-error>Entre 8 y 15 caracteres</mat-error>
     </mat-form-field>
-    <mat-form-field appearance="outline"><mat-label>Teléfono</mat-label><input matInput formControlName="telefono" /><mat-error>Requerido</mat-error></mat-form-field>
-    <mat-form-field appearance="outline"><mat-label>Correo (opcional)</mat-label><input matInput type="email" formControlName="correo" /><mat-error>Correo no válido</mat-error></mat-form-field>
+    <mat-form-field appearance="outline"><mat-label>Teléfono</mat-label><input matInput
+        formControlName="telefono" /><mat-error>Requerido</mat-error></mat-form-field>
+    <mat-form-field appearance="outline"><mat-label>Correo (opcional)</mat-label><input matInput type="email"
+        formControlName="correo" /><mat-error>Correo no válido</mat-error></mat-form-field>
   </form>
   @if (datos) { <p class="nota">Solo se puede actualizar teléfono y correo.</p> }
 </mat-dialog-content>

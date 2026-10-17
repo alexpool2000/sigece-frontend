@@ -1,7 +1,36 @@
-.card { margin-top: 16px; }
-.cab { display: flex; justify-content: space-between; align-items: center; width: 100%; }
-.datos { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; padding-top: 16px; }
-.datos span { display: block; font-size: 12px; opacity: .7; }
-.tabla { overflow-x: auto; }
-.star { color: #f9a825; }
-.vacio { text-align: center; padding: 24px; }
+.card {
+    margin-top: 16px;
+}
+
+.cab {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+.datos {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    padding-top: 16px;
+}
+
+.datos span {
+    display: block;
+    font-size: 12px;
+    opacity: .7;
+}
+
+.tabla {
+    overflow-x: auto;
+}
+
+.star {
+    color: #f9a825;
+}
+
+.vacio {
+    text-align: center;
+    padding: 24px;
+}

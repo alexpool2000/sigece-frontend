@@ -6,7 +6,7 @@
       <input matInput formControlName="apoderado" [matAutocomplete]="auto" />
       <mat-autocomplete #auto="matAutocomplete" [displayWith]="mostrar">
         @for (a of opciones(); track a.id) {
-          <mat-option [value]="a">{{ a.apellidos }}, {{ a.nombres }} · {{ a.numeroDocumento }}</mat-option>
+        <mat-option [value]="a">{{ a.apellidos }}, {{ a.nombres }} · {{ a.numeroDocumento }}</mat-option>
         }
       </mat-autocomplete>
       <mat-hint>¿No existe? Regístrelo primero en Apoderados.</mat-hint>
@@ -22,7 +22,8 @@
 
     <mat-checkbox formControlName="esContactoPrincipal">Contacto principal</mat-checkbox>
     @if (data.tienePrincipal) {
-      <p class="nota">Este estudiante ya tiene un contacto principal. Para cambiarlo, use «Marcar como principal» en la tabla.</p>
+    <p class="nota">Este estudiante ya tiene un contacto principal. Para cambiarlo, use «Marcar como principal» en la
+      tabla.</p>
     }
   </form>
 </mat-dialog-content>

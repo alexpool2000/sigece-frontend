@@ -1,0 +1,73 @@
+<h2>Dashboard de indicadores</h2>
+
+<div class="filtros">
+  <mat-form-field appearance="outline">
+    <mat-label>Desde</mat-label>
+    <input matInput type="date" [value]="filtro().fechaDesde" [max]="hoy"
+      (change)="cambiar({ fechaDesde: $any($event.target).value })" />
+  </mat-form-field>
+  <mat-form-field appearance="outline">
+    <mat-label>Hasta</mat-label>
+    <input matInput type="date" [value]="filtro().fechaHasta" [max]="hoy"
+      (change)="cambiar({ fechaHasta: $any($event.target).value })" />
+  </mat-form-field>
+  <mat-form-field appearance="outline">
+    <mat-label>Nivel</mat-label>
+    <mat-select value="" (selectionChange)="cambiar({ nivel: $event.value })">
+      <mat-option value="">Todos</mat-option>
+      @for (n of niveles; track n) { <mat-option [value]="n">{{ n }}</mat-option> }
+    </mat-select>
+  </mat-form-field>
+  <mat-form-field appearance="outline">
+    <mat-label>Grado</mat-label>
+    <input matInput placeholder="Ej. 3" (change)="cambiar({ grado: $any($event.target).value })" />
+  </mat-form-field>
+</div>
+
+@if (datos(); as d) {
+<div class="kpis">
+  <mat-card class="kpi"><mat-icon>folder_open</mat-icon><strong>{{ d.totalIncidentes
+      }}</strong><span>Incidentes</span></mat-card>
+  <mat-card class="kpi"><mat-icon>repeat</mat-icon><strong>{{ d.totalReincidentes
+      }}</strong><span>Reincidentes</span></mat-card>
+  <mat-card class="kpi"><mat-icon>send</mat-icon><strong>{{ d.totalDerivadosSiseve }}</strong><span>Derivados a
+      SíSeVe</span></mat-card>
+  <mat-card class="kpi"><mat-icon>task_alt</mat-icon><strong>{{ d.totalCerrados
+      }}</strong><span>Cerrados</span></mat-card>
+  <mat-card class="kpi"><mat-icon>percent</mat-icon><strong>{{ d.porcentajeResolucion
+      }}%</strong><span>Resolución</span></mat-card>
+</div>
+
+<div class="paneles">
+  <mat-card class="panel">
+    <h3>Por gravedad</h3><ng-container *ngTemplateOutlet="barras; context: { $implicit: gravedad() }" />
+  </mat-card>
+  <mat-card class="panel">
+    <h3>Por estado</h3><ng-container *ngTemplateOutlet="barras; context: { $implicit: estado() }" />
+  </mat-card>
+  <mat-card class="panel">
+    <h3>Por tipo de incidencia</h3><ng-container *ngTemplateOutlet="barras; context: { $implicit: tipo() }" />
+  </mat-card>
+  <mat-card class="panel">
+    <h3>Por mes</h3><ng-container *ngTemplateOutlet="barras; context: { $implicit: mes() }" />
+  </mat-card>
+</div>
+} @else if (error()) {
+<p class="msg">No se pudieron cargar los indicadores. Revise los filtros e intente nuevamente.</p>
+} @else {
+<p class="msg">Cargando…</p>
+}
+
+<ng-template #barras let-filas>
+  @for (f of filas; track f.etiqueta) {
+  <div class="fila">
+    <span class="eti">{{ f.etiqueta }}</span>
+    <div class="barra">
+      <div class="relleno" [style.width.%]="f.ancho" [style.background]="f.color"></div>
+    </div>
+    <span class="val">{{ f.valor }}</span>
+  </div>
+  } @empty {
+  <p class="vacio">Sin datos en el período</p>
+  }
+</ng-template>
