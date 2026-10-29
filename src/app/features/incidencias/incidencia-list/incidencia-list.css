@@ -21,14 +21,6 @@
     border-radius: 12px;
 }
 
-tr.mat-mdc-row {
-    cursor: pointer;
-}
-
-tr.mat-mdc-row:hover {
-    background: var(--mat-sys-surface-container);
-}
-
 .sin {
     color: var(--mat-sys-error);
     font-size: 13px;
@@ -42,4 +34,35 @@ tr.mat-mdc-row:hover {
 .vacio {
     text-align: center;
     padding: 24px;
+}
+
+.btn-ver {
+    width: 40px;
+    height: 40px;
+    padding: 8px;
+    border: 1px solid #eceef2;
+    border-radius: 50%;
+    background: #f5f6f8;
+}
+
+.btn-ver .mat-mdc-button-persistent-ripple,
+.btn-ver .mat-mdc-button-persistent-ripple::before,
+.btn-ver .mat-mdc-button-ripple,
+.btn-ver .mat-focus-indicator::before {
+    border-radius: 50%;
+}
+
+.btn-ver:hover {
+    background: #eceef2;
+}
+
+.btn-ver:focus-visible {
+    outline: 2px solid #1a73e8;
+    outline-offset: 2px;
+}
+
+.cab {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
 }

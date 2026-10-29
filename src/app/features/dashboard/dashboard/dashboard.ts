@@ -11,10 +11,10 @@ import { DashboardFiltro, Indicadores } from '../../../core/models/dashboard.mod
 import { NIVELES } from '../../../core/models/enums';
 import { DashboardApi } from '../../../core/services/dashboard-api';
 
-const COLOR_GRAVEDAD: Record<string, string> = { LEVE: '#2e7d32', MODERADA: '#f9a825', GRAVE: '#ef6c00', MUY_GRAVE: '#c62828' };
+const COLOR_GRAVEDAD: Record<string, string> = { LEVE: '#2e7d32', MODERADO: '#f9a825', GRAVE: '#ef6c00', MUY_GRAVE: '#c62828' };
 const COLOR_ESTADO: Record<string, string> = {
   REGISTRADO: '#546e7a', EN_INVESTIGACION: '#1565c0', EN_SEGUIMIENTO: '#6a1b9a',
-  RESUELTO: '#2e7d32', DERIVADO_SISEVE: '#ad1457', CERRADO: '#37474f',
+  RESUELTO: '#2e7d32', CERRADO: '#37474f',
 };
 
 interface Fila { etiqueta: string; valor: number; ancho: number; color: string; }

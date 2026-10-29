@@ -1,4 +1,5 @@
 <div class="cab">
+  @if (soloSusAulas) { <p class="ayuda">Solo se muestran los estudiantes de sus grados o secciones.</p> }
   <h2>Estudiantes</h2>
   @if (puedeEditar) {
   <button mat-flat-button (click)="abrirForm(null)"><mat-icon>add</mat-icon> Nuevo estudiante</button>

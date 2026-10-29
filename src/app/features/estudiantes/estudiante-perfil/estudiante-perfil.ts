@@ -28,7 +28,7 @@ export class EstudiantePerfil {
   private snack = inject(MatSnackBar);
 
   readonly id = Number(this.route.snapshot.paramMap.get('id'));
-  readonly puedeEditar = inject(Auth).tieneRol(['ROLE_ADMIN', 'ROLE_DIRECTOR', 'ROLE_TUTOR', 'ROLE_PSICOLOGO']);
+  readonly puedeEditar = inject(Auth).tieneRol(['ROLE_ADMINISTRADOR']);
   readonly columnas = ['nombre', 'documento', 'parentesco', 'contacto', 'principal', 'acciones'];
 
   perfil = signal<PerfilEstudiante | null>(null);

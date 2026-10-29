@@ -14,10 +14,11 @@ import { CATEGORIAS_SISEVE } from '../../../core/models/enums';
 import { TipoIncidencia } from '../../../core/models/tipo-incidencia.models';
 import { TipoIncidenciaApi } from '../../../core/services/tipo-incidencia-api';
 import { TipoIncidenciaForm } from '../tipo-incidencia-form/tipo-incidencia-form';
+import { GravedadChip } from '../../../shared/gravedad-chip/gravedad-chip';
 
 @Component({
   selector: 'app-tipo-incidencia-list',
-  imports: [MatTableModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatButtonModule, MatIconModule],
+  imports: [MatTableModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatButtonModule, MatIconModule, GravedadChip],
   templateUrl: './tipo-incidencia-list.html',
   styleUrl: './tipo-incidencia-list.css',
 })
@@ -27,9 +28,9 @@ export class TipoIncidenciaList {
   private snack = inject(MatSnackBar);
 
   readonly categorias = CATEGORIAS_SISEVE;
-  readonly columnas = ['nombre', 'categoria', 'descripcion', 'estado', 'acciones'];
+  readonly columnas = ['nombre', 'categoria', 'gravedad', 'descripcion', 'estado', 'acciones'];
   // Matriz: solo el Administrador edita; Director y Comité en solo lectura
-  readonly puedeEditar = inject(Auth).tieneRol(['ROLE_ADMIN']);
+  readonly puedeEditar = inject(Auth).tieneRol(['ROLE_ADMINISTRADOR']);
 
   texto = signal('');
   categoria = signal('');

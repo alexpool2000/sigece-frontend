@@ -28,17 +28,23 @@ export class Login {
   error = signal('');
 
   entrar() {
-    this.cargando.set(true);
-    this.error.set('');
-    this.auth.login(this.form.getRawValue()).subscribe({
-      next: r => {
-        const gestion = ['ROLE_DIRECTOR', 'ROLE_COMITE_BIENESTAR'].includes(r.usuario.rol);
-        this.router.navigate([gestion ? '/dashboard' : '/incidencias']);
-      },
-      error: e => {
+  this.cargando.set(true);
+  this.error.set('');
+  this.auth.login(this.form.getRawValue()).subscribe({
+    next: async r => {
+      const destino = r.usuario.rol === 'ROLE_ADMINISTRADOR' ? '/dashboard' : '/incidencias';
+      const ok = await this.router.navigate([destino]);
+      console.log('Login OK. Navegación a', destino, '→', ok);
+      if (!ok) {
         this.cargando.set(false);
-        this.error.set(e.status === 403 ? 'Cuenta desactivada' : 'Usuario o contraseña incorrectos');
-      },
-    });
-  }
+        this.error.set('No se pudo abrir la pantalla inicial');
+      }
+    },
+    error: e => {
+      console.error('Login falló', e);
+      this.cargando.set(false);
+      this.error.set(e.status === 403 ? 'Cuenta desactivada' : 'Usuario o contraseña incorrectos');
+    },
+  });
+}
 }

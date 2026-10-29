@@ -29,7 +29,7 @@ export class ApoderadoList {
   readonly tipos = TIPOS_DOCUMENTO;
   readonly columnas = ['documento', 'nombre', 'telefono', 'correo', 'acciones'];
   // Matriz: Comité solo lectura en UC-05
-  readonly puedeEditar = this.auth.tieneRol(['ROLE_ADMIN', 'ROLE_DIRECTOR', 'ROLE_TUTOR', 'ROLE_PSICOLOGO']);
+  readonly puedeEditar = this.auth.tieneRol(['ROLE_ADMINISTRADOR']);
 
   filtro = signal<ApoderadoFiltro>({ termino: '', tipoDocumento: '', page: 0, size: 10 });
   private recarga = signal(0);

@@ -1,0 +1,121 @@
+<h2>Registrar incidencia</h2>
+
+@if (cargandoTipos()) {
+<p>Cargando tipos de incidencia...</p>
+} @else if (errorTipos()) {
+<p class="error-carga">
+    No se pudieron cargar los tipos de incidencia.
+    Verifica tu conexión o inténtalo nuevamente.
+</p>
+} @else if (tipos().length === 0) {
+<p>No hay tipos de incidencia activos disponibles.</p>
+}
+
+<form [formGroup]="form" (ngSubmit)="guardar()" class="grid">
+    <mat-form-field appearance="outline">
+        <mat-label>Tipo de incidencia</mat-label>
+        <mat-select formControlName="tipoIncidenciaId" (selectionChange)="alElegirTipo($event.value)">
+            @for (t of tipos(); track t.id) { <mat-option [value]="t.id">{{ t.nombre }}</mat-option> }
+        </mat-select>
+        @if (form.controls.tipoIncidenciaId.hasError('required')) {
+        <mat-error>Elige un tipo de incidencia</mat-error>
+        }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+        <mat-label>Gravedad</mat-label>
+        <mat-select formControlName="gravedad">
+            @for (g of gravedades; track g) { <mat-option [value]="g">{{ g.replace('_', ' ') }}</mat-option> }
+        </mat-select>
+        <mat-hint>Se propone según el tipo, puedes cambiarla</mat-hint>
+        @if (form.controls.gravedad.hasError('required')) {
+        <mat-error>Elige la gravedad</mat-error>
+        }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+        <mat-label>Fecha y hora del hecho</mat-label>
+        <input matInput type="datetime-local" formControlName="fechaOcurrencia" [max]="maxFecha" />
+        @if (form.controls.fechaOcurrencia.hasError('required')) {
+        <mat-error>Indica cuándo ocurrió</mat-error>
+        }
+        @if (form.controls.fechaOcurrencia.hasError('fechaFutura')) {
+        <mat-error>
+            La fecha y hora del incidente no pueden estar en el futuro.
+        </mat-error>
+        }
+
+        @if (form.controls.fechaOcurrencia.hasError('fechaInvalida')) {
+        <mat-error>
+            Ingresa una fecha y hora válidas.
+        </mat-error>
+        }
+
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+        <mat-label>Medio</mat-label>
+        <mat-select formControlName="medioOcurrencia">
+            <mat-option value="PRESENCIAL">Presencial</mat-option>
+            <mat-option value="DIGITAL">Digital</mat-option>
+        </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="completo">
+        <mat-label>Lugar</mat-label>
+        <input matInput formControlName="lugarOcurrencia" maxlength="150"
+            placeholder="Patio, aula 3B, grupo de WhatsApp…" />
+        @if (form.controls.lugarOcurrencia.hasError('required')) {
+        <mat-error>Indica el lugar (máximo 150 caracteres)</mat-error>
+        }
+        @if (form.controls.lugarOcurrencia.hasError('pattern')) {
+        <mat-error>El lugar no puede contener únicamente espacios.</mat-error>
+        }
+
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="completo">
+        <mat-label>Descripción de lo ocurrido</mat-label>
+
+        <textarea matInput rows="6" maxlength="2000" formControlName="descripcion"></textarea>
+
+        <mat-hint align="end">
+            {{ form.controls.descripcion.value.length }}/2000
+        </mat-hint>
+
+        @if (form.controls.descripcion.hasError('required')) {
+        <mat-error>Describe el hecho.</mat-error>
+        }
+
+        @if (form.controls.descripcion.hasError('pattern')) {
+        <mat-error>
+            La descripción no puede contener únicamente espacios.
+        </mat-error>
+        }
+
+        @if (form.controls.descripcion.hasError('maxlength')) {
+        <mat-error>
+            La descripción no puede superar los 2000 caracteres.
+        </mat-error>
+        }
+
+    </mat-form-field>
+
+    <mat-slide-toggle formControlName="notificarApoderado" class="completo">
+        Avisar al apoderado por WhatsApp al registrar
+    </mat-slide-toggle>
+
+    <div class="acciones completo">
+        <a mat-button routerLink="/incidencias">Cancelar</a>
+
+        <button mat-flat-button type="submit"
+            [disabled]="guardando() || cargandoTipos() || errorTipos() || tipos().length === 0">
+            @if (guardando()) {
+            Registrando incidencia...
+            } @else {
+            Registrar incidencia
+            }
+        </button>
+
+    </div>
+</form>

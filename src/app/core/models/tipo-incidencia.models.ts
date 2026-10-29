@@ -1,5 +1,9 @@
-import { CategoriaSiseve } from './enums';
+import { CategoriaSiseve, Gravedad } from './enums';
 
-export interface TipoIncidenciaRequest { nombre: string; categoriaSiseve: CategoriaSiseve; descripcion?: string | null; }
-// Campos de la respuesta SUPUESTOS (el api-docs no incluye el DTO de respuesta)
+export interface TipoIncidenciaRequest { 
+    nombre: string; 
+    categoriaSiseve: CategoriaSiseve; 
+    gravedadBase: Gravedad; 
+    descripcion?: string | null; }
+// Campos de la respuesta SUPUESTOS hasta que el backend actualice su API
 export interface TipoIncidencia extends TipoIncidenciaRequest { id: number; activo: boolean; }

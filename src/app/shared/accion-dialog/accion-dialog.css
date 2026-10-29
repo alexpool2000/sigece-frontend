@@ -1,0 +1,12 @@
+.col {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: min(460px, 80vw);
+}
+
+.msg {
+    margin: 0 0 12px;
+    color: #555;
+    white-space: pre-line;
+}

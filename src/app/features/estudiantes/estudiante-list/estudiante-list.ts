@@ -32,7 +32,8 @@ export class EstudianteList {
   readonly niveles = NIVELES;
   readonly columnas = ['codigo', 'nombre', 'nivel', 'estado', 'acciones'];
   // Matriz: Comité solo lectura en UC-04
-  readonly puedeEditar = this.auth.tieneRol(['ROLE_ADMIN', 'ROLE_DIRECTOR', 'ROLE_TUTOR', 'ROLE_PSICOLOGO']);
+  readonly puedeEditar = this.auth.tieneRol(['ROLE_ADMINISTRADOR']);
+  readonly soloSusAulas = this.auth.tieneRol(['ROLE_TUTOR']);
 
   filtro = signal<EstudianteFiltro>({ termino: '', nivel: '', grado: '', seccion: '', activo: true, page: 0, size: 10 });
   private recarga = signal(0);

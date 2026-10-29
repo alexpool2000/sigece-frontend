@@ -32,6 +32,11 @@
       <th mat-header-cell *matHeaderCellDef>Categoría SíSeVe</th>
       <td mat-cell *matCellDef="let t"><span class="cat">{{ t.categoriaSiseve.replaceAll('_', ' ') }}</span></td>
     </ng-container>
+    <ng-container matColumnDef="gravedad">
+      <th mat-header-cell *matHeaderCellDef>Gravedad base</th>
+      <td mat-cell *matCellDef="let t">@if (t.gravedadBase) { <app-gravedad-chip [valor]="t.gravedadBase" /> } @else { —
+        }</td>
+    </ng-container>
     <ng-container matColumnDef="descripcion">
       <th mat-header-cell *matHeaderCellDef>Descripción</th>
       <td mat-cell *matCellDef="let t">{{ t.descripcion || '—' }}</td>

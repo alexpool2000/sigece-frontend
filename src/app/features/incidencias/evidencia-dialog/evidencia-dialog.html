@@ -1,0 +1,20 @@
+<h2 mat-dialog-title>Subir evidencia</h2>
+<mat-dialog-content class="col">
+    <div class="archivo">
+        <button mat-stroked-button type="button" (click)="input.click()"><mat-icon>attach_file</mat-icon> Elegir
+            archivo</button>
+        <input #input type="file" hidden (change)="elegir($event)" />
+        <span class="nombre">{{ archivo()?.name ?? 'Ningún archivo seleccionado' }}</span>
+    </div>
+    @if (errorArchivo()) { <p class="error">{{ errorArchivo() }}</p> }
+
+    <mat-form-field appearance="outline">
+        <mat-label>Descripción</mat-label>
+        <textarea matInput rows="3" maxlength="500" [formControl]="descripcion"></textarea>
+        <mat-hint>Qué muestra o contiene este archivo</mat-hint>
+    </mat-form-field>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+    <button mat-button mat-dialog-close>Cancelar</button>
+    <button mat-flat-button [disabled]="!archivo() || descripcion.invalid" (click)="guardar()">Subir</button>
+</mat-dialog-actions>

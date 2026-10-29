@@ -2,8 +2,8 @@ import { Nivel } from './enums';
 
 export interface Indicadores {
   totalIncidentes: number;
-  totalReincidentes: number;
-  totalDerivadosSiseve: number;
+  totalReincidentes?: number;
+  totalDerivadosSiseve?: number;
   totalCerrados: number;
   porcentajeResolucion: number;
   incidentesPorGravedad: Record<string, number>;

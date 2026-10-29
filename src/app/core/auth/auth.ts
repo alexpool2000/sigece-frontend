@@ -39,11 +39,10 @@ export class Auth {
     return !!u && (!roles || roles.includes(u.rol));
   }
 
-  // Solo para desarrollo: usuarios admin, director, tutor, psicologo, comite / clave 1234
+  // Solo para desarrollo: usuarios admin,tutor, psicologo/ clave 1234
   private mockLogin(dto: LoginRequest): Observable<AuthResponse> {
     const roles: Record<string, Rol> = {
-      admin: 'ROLE_ADMIN', director: 'ROLE_DIRECTOR', tutor: 'ROLE_TUTOR',
-      psicologo: 'ROLE_PSICOLOGO', comite: 'ROLE_COMITE_BIENESTAR',
+      admin: 'ROLE_ADMINISTRADOR', tutor: 'ROLE_TUTOR', psicologo: 'ROLE_PSICOLOGO',
     };
     const rol = roles[dto.username];
     if (!rol || dto.password !== '1234')

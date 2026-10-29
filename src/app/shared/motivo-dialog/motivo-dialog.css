@@ -1,0 +1,4 @@
+.campo {
+    width: 100%;
+    min-width: min(420px, 80vw);
+}

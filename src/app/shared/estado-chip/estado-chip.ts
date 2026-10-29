@@ -3,7 +3,7 @@ import { EstadoIncidente } from '../../core/models/enums';
 
 const COLOR: Record<EstadoIncidente, string> = {
   REGISTRADO: '#546e7a', EN_INVESTIGACION: '#1565c0', EN_SEGUIMIENTO: '#6a1b9a',
-  RESUELTO: '#2e7d32', DERIVADO_SISEVE: '#ad1457', CERRADO: '#37474f',
+  RESUELTO: '#2e7d32', CERRADO: '#37474f',
 };
 
 @Component({

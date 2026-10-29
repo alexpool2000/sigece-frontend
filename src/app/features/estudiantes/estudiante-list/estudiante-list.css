@@ -44,3 +44,9 @@
     text-align: center;
     padding: 24px;
 }
+
+.ayuda {
+    font-size: 13px;
+    opacity: .7;
+    margin: 0 0 12px;
+}

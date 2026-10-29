@@ -14,6 +14,13 @@
       <mat-error>Requerida</mat-error>
     </mat-form-field>
     <mat-form-field appearance="outline">
+      <mat-label>Gravedad base</mat-label>
+      <mat-select formControlName="gravedadBase">
+        @for (g of gravedades; track g) { <mat-option [value]="g">{{ g.replace('_', ' ') }}</mat-option> }
+      </mat-select>
+      <mat-hint>Determina si se notifica al apoderado</mat-hint>
+    </mat-form-field>
+    <mat-form-field appearance="outline">
       <mat-label>Descripción (opcional)</mat-label>
       <textarea matInput rows="3" formControlName="descripcion"></textarea>
       <mat-error>Máximo 255 caracteres</mat-error>

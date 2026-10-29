@@ -1,0 +1,26 @@
+<h2 mat-dialog-title>{{ data.titulo }}</h2>
+<mat-dialog-content>
+  @if (data.mensaje) { <p class="msg">{{ data.mensaje }}</p> }
+  <form [formGroup]="form" class="col">
+    @for (c of data.campos; track c.nombre) {
+      <mat-form-field appearance="outline">
+        <mat-label>{{ c.etiqueta }}</mat-label>
+        @switch (c.tipo) {
+          @case ('select') {
+            <mat-select [formControlName]="c.nombre">
+              @for (o of c.opciones; track o.valor) { <mat-option [value]="o.valor">{{ o.texto }}</mat-option> }
+            </mat-select>
+          }
+          @case ('area') { <textarea matInput rows="4" [formControlName]="c.nombre"></textarea> }
+          @case ('fecha') { <input matInput type="datetime-local" [formControlName]="c.nombre" /> }
+          @default { <input matInput [formControlName]="c.nombre" /> }
+        }
+        @if (form.get(c.nombre)?.hasError('minlength')) { <mat-error>Mínimo {{ c.minimo }} caracteres</mat-error> }
+      </mat-form-field>
+    }
+  </form>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close>Cancelar</button>
+  <button mat-flat-button [disabled]="form.invalid" (click)="aceptar()">{{ data.confirmar ?? 'Guardar' }}</button>
+</mat-dialog-actions>

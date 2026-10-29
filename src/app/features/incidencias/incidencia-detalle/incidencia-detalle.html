@@ -1,0 +1,364 @@
+<a mat-button routerLink="/incidencias">
+  <mat-icon>arrow_back</mat-icon> Volver al listado
+</a>
+
+@if (expediente(); as e) {
+<header class="cabecera">
+  <h2>{{ e.incidente.codigoCaso }}</h2>
+  <app-gravedad-chip [valor]="e.incidente.gravedad" />
+  <app-estado-chip [valor]="e.incidente.estado" />
+  <span class="espacio"></span>
+
+  @if (e.incidente.estado === 'EN_SEGUIMIENTO' && esPsicologo) {
+  <button mat-flat-button (click)="resolver()">
+    Marcar como resuelto
+  </button>
+  }
+
+  @if (e.incidente.estado === 'RESUELTO' && esAdmin) {
+  <button mat-flat-button (click)="cerrar()">
+    Cerrar caso
+  </button>
+  }
+
+  @if (e.incidente.estado !== 'CERRADO' && (puedeEditar || puedeGestionar)) {
+  <button mat-stroked-button [matMenuTriggerFor]="menu">
+    Más acciones <mat-icon>arrow_drop_down</mat-icon>
+  </button>
+
+  <mat-menu #menu="matMenu">
+    @if (puedeEditar && transiciones().length) {
+    <button mat-menu-item (click)="cambiarEstado()">
+      Cambiar estado
+    </button>
+    }
+
+    @if (puedeGestionar) {
+    <button mat-menu-item (click)="cambiarGravedad(e.incidente.gravedad)">
+      Cambiar gravedad
+    </button>
+    }
+
+    @if (esAdmin && !e.incidente.reportadoSiseve) {
+    <button mat-menu-item (click)="derivarSiseve()">
+      Registrar derivación a SíSeVe
+    </button>
+    }
+  </mat-menu>
+  }
+</header>
+
+<p class="tipo">{{ e.incidente.tipoIncidenciaNombre }}</p>
+
+<mat-tab-group animationDuration="0ms">
+
+  <!-- Pestaña: Datos -->
+  <mat-tab label="Datos">
+    <dl class="datos">
+      <dt>Ocurrió</dt>
+      <dd>
+        {{ e.incidente.fechaOcurrencia | date: 'dd/MM/yyyy HH:mm' }}
+        · {{ e.incidente.lugarOcurrencia }}
+        ({{ e.incidente.medioOcurrencia === 'DIGITAL' ? 'digital' : 'presencial' }})
+      </dd>
+
+      <dt>Registrado</dt>
+      <dd>
+        {{ e.incidente.fechaRegistro | date: 'dd/MM/yyyy HH:mm' }}
+        por {{ e.incidente.reportadoPorNombre }}
+      </dd>
+
+      <dt>Responsable</dt>
+      <dd>{{ e.incidente.responsableActualNombre }}</dd>
+
+      <dt>Aviso al apoderado</dt>
+      <dd>{{ e.incidente.notificarApoderado ? 'Sí' : 'No' }}</dd>
+
+      <dt>SíSeVe</dt>
+      <dd>
+        {{ e.incidente.reportadoSiseve
+        ? 'Derivado, código ' + e.incidente.codigoSiseve
+        : 'Sin derivar' }}
+      </dd>
+
+      <dt>Descripción</dt>
+      <dd class="texto">{{ e.incidente.descripcion }}</dd>
+
+      @if (e.incidente.reportadoSiseve && e.incidente.fechaReporteSiseve) {
+      <dt>Derivación</dt>
+      <dd>
+        {{ e.incidente.fechaReporteSiseve | date: 'dd/MM/yyyy HH:mm' }}
+        · {{ e.incidente.derivadoPorNombre }}
+
+        @if (e.incidente.observacionesSiseve) {
+        <br />
+        {{ e.incidente.observacionesSiseve }}
+        }
+      </dd>
+      }
+
+      @if (e.incidente.fechaCierre) {
+      <dt>Cierre</dt>
+      <dd>
+        {{ e.incidente.fechaCierre | date: 'dd/MM/yyyy HH:mm' }}
+        por {{ e.incidente.cerradoPorNombre }}
+      </dd>
+
+      <dt>Acta</dt>
+      <dd class="texto">{{ e.incidente.actaCierre }}</dd>
+
+      <dt>Conclusiones</dt>
+      <dd class="texto">{{ e.incidente.conclusionesFinales }}</dd>
+      }
+    </dl>
+  </mat-tab>
+
+  <!-- Pestaña: Involucrados -->
+  <mat-tab [label]="'Involucrados (' + e.involucrados.length + ')'">
+    @if (puedeEditar && e.incidente.estado !== 'CERRADO') {
+    <div class="barra">
+      <button mat-flat-button (click)="agregarInvolucrado()">
+        <mat-icon>person_add</mat-icon>
+        Agregar involucrado
+      </button>
+    </div>
+    }
+
+    <table mat-table [dataSource]="e.involucrados">
+      <ng-container matColumnDef="rol">
+        <th mat-header-cell *matHeaderCellDef>Rol</th>
+        <td mat-cell *matCellDef="let p">{{ p.rolInvolucrado }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="nombre">
+        <th mat-header-cell *matHeaderCellDef>Nombre</th>
+        <td mat-cell *matCellDef="let p">{{ p.nombreCompleto }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="documento">
+        <th mat-header-cell *matHeaderCellDef>Documento</th>
+        <td mat-cell *matCellDef="let p">
+          {{ p.documentoIdentidad ?? '—' }}
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="observaciones">
+        <th mat-header-cell *matHeaderCellDef>Observaciones</th>
+        <td mat-cell *matCellDef="let p">
+          {{ p.observaciones ?? '—' }}
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="acciones">
+        <th mat-header-cell *matHeaderCellDef></th>
+        <td mat-cell *matCellDef="let p">
+          @if (e.incidente.estado !== 'CERRADO') {
+          <button mat-icon-button title="Retirar del caso" (click)="retirar(p)">
+            <mat-icon>person_remove</mat-icon>
+          </button>
+          }
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="columnasInvolucrados"></tr>
+      <tr mat-row *matRowDef="let fila; columns: columnasInvolucrados"></tr>
+
+      <tr class="mat-row" *matNoDataRow>
+        <td class="vacio" [attr.colspan]="columnasInvolucrados.length">
+          Todavía no hay involucrados registrados.
+        </td>
+      </tr>
+    </table>
+  </mat-tab>
+
+  <!-- Pestaña: Seguimiento -->
+  <mat-tab [label]="'Seguimiento (' + e.seguimiento.length + ')'">
+    <div class="acciones-seguimiento">
+      <button mat-raised-button color="primary" type="button" (click)="registrarAccionSeguimiento()"
+        [disabled]="!puedeEditar">
+        <mat-icon>add</mat-icon>
+        Registrar acción
+      </button>
+    </div>
+    <table mat-table [dataSource]="e.seguimiento">
+      <ng-container matColumnDef="fecha">
+        <th mat-header-cell *matHeaderCellDef>Fecha</th>
+        <td mat-cell *matCellDef="let a">
+          {{ a.fechaAccion | date: 'dd/MM/yyyy HH:mm' }}
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="tipo">
+        <th mat-header-cell *matHeaderCellDef>Acción</th>
+        <td mat-cell *matCellDef="let a">
+          {{ a.tipoAccion.replaceAll('_', ' ') }}
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="descripcion">
+        <th mat-header-cell *matHeaderCellDef>Descripción</th>
+        <td mat-cell *matCellDef="let a">{{ a.descripcion }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="usuario">
+        <th mat-header-cell *matHeaderCellDef>Registró</th>
+        <td mat-cell *matCellDef="let a">{{ a.usuarioNombre }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="revision">
+        <th mat-header-cell *matHeaderCellDef>Próxima revisión</th>
+        <td mat-cell *matCellDef="let a">
+          {{ a.fechaProximaRevision
+          ? (a.fechaProximaRevision | date: 'dd/MM/yyyy')
+          : '—' }}
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="estado">
+        <th mat-header-cell *matHeaderCellDef>Estado</th>
+        <td mat-cell *matCellDef="let a">
+          {{ a.estadoAccion.replaceAll('_', ' ') }}
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="columnasSeguimiento"></tr>
+      <tr mat-row *matRowDef="let fila; columns: columnasSeguimiento"></tr>
+
+      <tr class="mat-row" *matNoDataRow>
+        <td class="vacio" [attr.colspan]="columnasSeguimiento.length">
+          Aún no hay acciones de seguimiento.
+        </td>
+      </tr>
+    </table>
+  </mat-tab>
+
+  <!-- Pestaña: Evidencias -->
+  <mat-tab [label]="'Evidencias (' + e.evidencias.length + ')'">
+    @if (e.incidente.estado !== 'CERRADO') {
+    <div class="barra">
+      <button mat-flat-button (click)="subirEvidencia()">
+        <mat-icon>upload_file</mat-icon>
+        Subir evidencia
+      </button>
+    </div>
+    }
+
+    <table mat-table [dataSource]="e.evidencias">
+      <ng-container matColumnDef="archivo">
+        <th mat-header-cell *matHeaderCellDef>Archivo</th>
+        <td mat-cell *matCellDef="let a">
+          {{ a.nombreOriginal }}
+          <br />
+          <small>{{ a.descripcion }}</small>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="tamano">
+        <th mat-header-cell *matHeaderCellDef>Tamaño</th>
+        <td mat-cell *matCellDef="let a">{{ tamano(a.tamanoBytes) }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="subido">
+        <th mat-header-cell *matHeaderCellDef>Subido por</th>
+        <td mat-cell *matCellDef="let a">
+          {{ a.subidoPorNombre }}
+          <br />
+          <small>{{ a.createdAt | date: 'dd/MM/yyyy HH:mm' }}</small>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="acciones">
+        <th mat-header-cell *matHeaderCellDef></th>
+        <td mat-cell *matCellDef="let a">
+          <button mat-icon-button title="Descargar" (click)="descargar(a)">
+            <mat-icon>download</mat-icon>
+          </button>
+
+          <button mat-icon-button title="Verificar integridad (SHA-256)" (click)="verificar(a)">
+            <mat-icon>verified</mat-icon>
+          </button>
+
+          @if (e.incidente.estado !== 'CERRADO') {
+          <button mat-icon-button title="Eliminar" (click)="eliminarEvidencia(a)">
+            <mat-icon>delete</mat-icon>
+          </button>
+          }
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="columnasEvidencias"></tr>
+      <tr mat-row *matRowDef="let fila; columns: columnasEvidencias"></tr>
+
+      <tr class="mat-row" *matNoDataRow>
+        <td class="vacio" [attr.colspan]="columnasEvidencias.length">
+          Sin evidencias. Puedes subir fotos, documentos o audios de hasta 10 MB.
+        </td>
+      </tr>
+    </table>
+  </mat-tab>
+
+  <!-- Pestaña: Notificaciones -->
+  <mat-tab [label]="'Notificaciones (' + e.notificaciones.length + ')'">
+    <table mat-table [dataSource]="e.notificaciones">
+      <ng-container matColumnDef="tipo">
+        <th mat-header-cell *matHeaderCellDef>Tipo</th>
+        <td mat-cell *matCellDef="let n">
+          {{ n.tipoNotificacion.replaceAll('_', ' ') }}
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="apoderado">
+        <th mat-header-cell *matHeaderCellDef>Apoderado</th>
+        <td mat-cell *matCellDef="let n">
+          {{ n.apoderadoNombre ?? '—' }}
+          <br />
+          <small>{{ n.destino }}</small>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="canal">
+        <th mat-header-cell *matHeaderCellDef>Canal</th>
+        <td mat-cell *matCellDef="let n">
+          {{ n.canal.replaceAll('_', ' ') }}
+          · {{ n.origen === 'MANUAL' ? 'manual' : 'automática' }}
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="envio">
+        <th mat-header-cell *matHeaderCellDef>Enviado</th>
+        <td mat-cell *matCellDef="let n">
+          {{ n.fechaEnvio ? (n.fechaEnvio | date: 'dd/MM/yyyy HH:mm') : '—' }}
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="estado">
+        <th mat-header-cell *matHeaderCellDef>Estado</th>
+        <td mat-cell *matCellDef="let n">
+          {{ n.estadoEnvio }}
+
+          @if (n.detalleResultado) {
+          <br />
+          <small>{{ n.detalleResultado }}</small>
+          }
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="columnasNotificaciones"></tr>
+      <tr mat-row *matRowDef="let fila; columns: columnasNotificaciones"></tr>
+
+      <tr class="mat-row" *matNoDataRow>
+        <td class="vacio" [attr.colspan]="columnasNotificaciones.length">
+          No se enviaron notificaciones a los apoderados.
+        </td>
+      </tr>
+    </table>
+  </mat-tab>
+
+</mat-tab-group>
+} @else if (estado() === 'error') {
+<p class="vacio">
+  No se pudo cargar el incidente. Revisa que exista y que tengas acceso a él.
+</p>
+} @else {
+<p class="vacio">Cargando…</p>
+}

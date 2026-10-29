@@ -1,0 +1,31 @@
+/* Contenedor principal en rejilla */
+.grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    /* Dos columnas en pantallas grandes */
+    gap: 16px;
+    /* Espaciado entre campos */
+    padding-bottom: 30px;
+    /* ¡Clave! Da aire al final para que el botón no quede pegado o cortado */
+}
+
+/* Elementos que ocupan todo el ancho del grid */
+.completo {
+    grid-column: 1 / -1;
+}
+
+/* Contenedor de los botones (Cancelar y Registrar) */
+.acciones {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 16px;
+}
+
+/* Ajuste responsive para pantallas pequeñas (móviles o tablets) */
+@media (max-width: 768px) {
+    .grid {
+        grid-template-columns: 1fr;
+        /* Una sola columna en pantallas chicas */
+    }
+}

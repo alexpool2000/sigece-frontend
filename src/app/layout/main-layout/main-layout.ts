@@ -11,16 +11,20 @@ import { Rol } from '../../core/auth/auth.models';
 
 interface Item { label: string; icon: string; ruta: string; roles?: Rol[]; }
 
+const ADM: Rol[] = ['ROLE_ADMINISTRADOR'];
+const ADM_TUTOR: Rol[] = ['ROLE_ADMINISTRADOR', 'ROLE_TUTOR'];
+
 const MENU: Item[] = [
   { label: 'Incidencias', icon: 'folder_open', ruta: '/incidencias' },
-  { label: 'Nueva incidencia', icon: 'add_circle', ruta: '/incidencias/nueva', roles: ['ROLE_DIRECTOR', 'ROLE_TUTOR', 'ROLE_PSICOLOGO'] },
-  { label: 'Estudiantes', icon: 'school', ruta: '/estudiantes' },
-  { label: 'Apoderados', icon: 'family_restroom', ruta: '/apoderados' },
-  { label: 'Alertas', icon: 'notifications', ruta: '/alertas', roles: ['ROLE_DIRECTOR', 'ROLE_COMITE_BIENESTAR', 'ROLE_TUTOR', 'ROLE_PSICOLOGO'] },
-  { label: 'Dashboard', icon: 'dashboard', ruta: '/dashboard', roles: ['ROLE_DIRECTOR', 'ROLE_COMITE_BIENESTAR'] },
-  { label: 'Reportes', icon: 'assessment', ruta: '/reportes', roles: ['ROLE_DIRECTOR', 'ROLE_COMITE_BIENESTAR'] },
-  { label: 'Tipos de incidencia', icon: 'category', ruta: '/admin/tipos-incidencia', roles: ['ROLE_ADMIN', 'ROLE_DIRECTOR', 'ROLE_COMITE_BIENESTAR'] },
-  { label: 'Usuarios y roles', icon: 'manage_accounts', ruta: '/admin/usuarios', roles: ['ROLE_ADMIN'] },
+  { label: 'Nueva incidencia', icon: 'add_circle', ruta: '/incidencias/nueva', roles: ['ROLE_TUTOR', 'ROLE_PSICOLOGO'] },
+  { label: 'Estudiantes', icon: 'school', ruta: '/estudiantes', roles: ADM_TUTOR },
+  { label: 'Apoderados', icon: 'family_restroom', ruta: '/apoderados', roles: ADM_TUTOR },
+  { label: 'Notificaciones', icon: 'notifications', ruta: '/notificaciones', roles: ADM_TUTOR },
+  { label: 'Derivaciones SíSeVe', icon: 'send', ruta: '/derivaciones', roles: ADM },
+  { label: 'Indicadores', icon: 'dashboard', ruta: '/dashboard', roles: ADM },
+  { label: 'Reportes', icon: 'assessment', ruta: '/reportes', roles: ADM },
+  { label: 'Tipos de incidencia', icon: 'category', ruta: '/admin/tipos-incidencia', roles: ADM },
+  { label: 'Usuarios', icon: 'manage_accounts', ruta: '/admin/usuarios', roles: ADM },
 ];
 
 @Component({

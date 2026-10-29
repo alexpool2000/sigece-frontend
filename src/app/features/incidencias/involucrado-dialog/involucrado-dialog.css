@@ -1,0 +1,6 @@
+.col {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: min(440px, 80vw);
+}

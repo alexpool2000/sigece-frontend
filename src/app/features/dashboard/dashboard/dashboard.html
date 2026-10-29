@@ -28,10 +28,12 @@
 <div class="kpis">
   <mat-card class="kpi"><mat-icon>folder_open</mat-icon><strong>{{ d.totalIncidentes
       }}</strong><span>Incidentes</span></mat-card>
+  @if (d.totalReincidentes !== undefined) {
   <mat-card class="kpi"><mat-icon>repeat</mat-icon><strong>{{ d.totalReincidentes
-      }}</strong><span>Reincidentes</span></mat-card>
+      }}</strong><span>Reincidentes</span></mat-card> }
+  @if (d.totalDerivadosSiseve !== undefined) {
   <mat-card class="kpi"><mat-icon>send</mat-icon><strong>{{ d.totalDerivadosSiseve }}</strong><span>Derivados a
-      SíSeVe</span></mat-card>
+      SíSeVe</span></mat-card>}
   <mat-card class="kpi"><mat-icon>task_alt</mat-icon><strong>{{ d.totalCerrados
       }}</strong><span>Cerrados</span></mat-card>
   <mat-card class="kpi"><mat-icon>percent</mat-icon><strong>{{ d.porcentajeResolucion
