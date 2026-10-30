@@ -1,10 +1,23 @@
 .grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0 12px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
     padding-top: 8px;
 }
 
 .full {
     grid-column: 1 / -1;
+}
+
+.backend-error-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background-color: #f8d7da;
+  color: #721c24;
+  padding: 12px 16px;
+  border-radius: 6px;
+  margin-bottom: 16px;
+  font-size: 14px;
+  border: 1px solid #f5c6cb;
 }

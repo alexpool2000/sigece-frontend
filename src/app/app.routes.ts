@@ -56,7 +56,9 @@ export const routes: Routes = [
         data: { titulo: 'Reportes e indicadores (ECUS22)', roles: ADM }
       },
       {
-        path: 'admin/usuarios', loadComponent: page, canActivate: [roleGuard],
+        path: 'admin/usuarios',
+        loadComponent: () => import('./features/usuarios/usuario-list/usuario-list').then(m => m.UsuarioList),
+        canActivate: [roleGuard],
         data: { titulo: 'Usuarios y roles (ECUS01)', roles: ADM }
       },
       {

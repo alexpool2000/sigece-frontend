@@ -1,0 +1,97 @@
+.cab {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+  
+  .cab h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #1e293b;
+  }
+  
+  .subtitulo {
+    margin: 4px 0 0 0;
+    font-size: 0.85rem;
+    color: #64748b;
+  }
+  
+  .filtros {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+  
+  .filtros .buscar {
+    flex: 1;
+    min-width: 250px;
+  }
+  
+  .filtros .filtro-select {
+    width: 200px;
+  }
+  
+  .tabla {
+    border-radius: 8px;
+    overflow: hidden;
+    background: white;
+  }
+  
+  table {
+    width: 100%;
+  }
+  
+  .user-cell, .contacto-cell {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .user-fullname {
+    font-weight: 500;
+    color: #0f172a;
+  }
+  
+  .user-nickname, .tel {
+    font-size: 0.75rem;
+    color: #64748b;
+  }
+  
+  .badge-rol {
+    font-size: 0.75rem;
+    background: #f1f5f9;
+    color: #334155;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-weight: 500;
+  }
+  
+  .chip-estado {
+    font-size: 0.75rem;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-weight: 600;
+  }
+  
+  .chip-estado.activo {
+    background: #dcfce7;
+    color: #15803d;
+  }
+  
+  .chip-estado.inactivo {
+    background: #fee2e2;
+    color: #b91c1c;
+  }
+  
+  .text-end {
+    text-align: right;
+  }
+  
+  .vacio {
+    text-align: center;
+    padding: 32px;
+    color: #64748b;
+    font-style: italic;
+  }
