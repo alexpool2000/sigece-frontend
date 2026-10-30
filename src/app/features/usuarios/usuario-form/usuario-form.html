@@ -1,0 +1,82 @@
+<h2 mat-dialog-title>{{ datos ? 'Editar usuario' : 'Nuevo usuario institucional' }}</h2>
+
+<mat-dialog-content>
+  <form [formGroup]="form" class="grid">
+    <mat-form-field appearance="outline">
+      <mat-label>Nombres</mat-label>
+      <input matInput formControlName="nombres" />
+      <mat-error>Los nombres son requeridos</mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Apellidos</mat-label>
+      <input matInput formControlName="apellidos" />
+      <mat-error>Los apellidos son requeridos</mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>DNI</mat-label>
+      <input matInput formControlName="dni" maxlength="15" />
+      <mat-error>DNI válido de 8 a 15 dígitos</mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Nombre de usuario</mat-label>
+      <input matInput formControlName="username" />
+      <mat-error>El usuario es requerido</mat-error>
+    </mat-form-field>
+
+    @if (!datos) {
+      <mat-form-field appearance="outline">
+        <mat-label>Contraseña inicial</mat-label>
+        <input matInput [type]="ocultarPassword() ? 'password' : 'text'" formControlName="password" />
+        <button mat-icon-button matSuffix type="button" (click)="ocultarPassword.set(!ocultarPassword())">
+          <mat-icon>{{ ocultarPassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+        </button>
+        <mat-error>Mínimo 8 caracteres</mat-error>
+      </mat-form-field>
+    }
+
+    <mat-form-field appearance="outline">
+      <mat-label>Correo electrónico</mat-label>
+      <input matInput type="email" formControlName="correo" />
+      <mat-error>Correo institucional no válido</mat-error>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Teléfono (opcional)</mat-label>
+      <input matInput formControlName="telefono" />
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Rol institucional</mat-label>
+      <mat-select formControlName="roleId">
+        @for (r of roles(); track r.id) {
+          <mat-option [value]="r.id">{{ r.nombre }}</mat-option>
+        }
+      </mat-select>
+      <mat-error>Debe seleccionar un rol</mat-error>
+    </mat-form-field>
+
+    @if (datos) {
+      <mat-form-field appearance="outline">
+        <mat-label>Estado de la cuenta</mat-label>
+        <mat-select formControlName="activo">
+          <mat-option [value]="true">Activo</mat-option>
+          <mat-option [value]="false">Inactivo / Suspendido</mat-option>
+        </mat-select>
+      </mat-form-field>
+    }
+  </form>
+
+  @if (datos) {
+    <p class="nota">El DNI y nombre de usuario no pueden ser modificados una vez registrados.</p>
+  }
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close>Cancelar</button>
+  <button mat-flat-button color="primary" (click)="guardar()" [disabled]="guardando()">
+    {{ guardando() ? 'Guardando…' : 'Guardar' }}
+  </button>
+</mat-dialog-actions>

@@ -1,55 +1,120 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { Observable, delay, of, tap, throwError } from 'rxjs';
-import { environment } from '../../../environments/environment';
-import { AuthResponse, LoginRequest, Rol, Usuario } from './auth.models';
+import { Observable, finalize, map, tap, throwError } from 'rxjs';
+import { AuthApi } from '../services/auth-api';
+import {
+  AuthResponseDto,
+  CambioPasswordRequestDto,
+  LoginRequestDto,
+  UsuarioMantenimientoResponseDto,
+} from '../models/auth.model';
 
 @Injectable({ providedIn: 'root' })
 export class Auth {
-  private http = inject(HttpClient);
-  private router = inject(Router);
-  private _usuario = signal<Usuario | null>(JSON.parse(localStorage.getItem('usuario') ?? 'null'));
+  private readonly authApi = inject(AuthApi);
+  private readonly router = inject(Router);
+  private readonly _usuario = signal<UsuarioMantenimientoResponseDto | null>(this.obtenerUsuarioInicial());
 
   readonly usuario = this._usuario.asReadonly();
   readonly autenticado = computed(() => !!this._usuario());
 
-  get token() { return localStorage.getItem('accessToken'); }
+  // Helper para obtener el rol activo del usuario directamente como string
+  readonly rol = computed<string | null>(() => {
+    const u = this._usuario() as any;
+    if (!u?.rol) return null;
+    return typeof u.rol === 'object' ? u.rol.nombre : u.rol;
+  });
 
-  login(dto: LoginRequest): Observable<AuthResponse> {
-    const req$ = environment.mock.auth
-      ? this.mockLogin(dto)
-      : this.http.post<AuthResponse>(`${environment.apiUrl}/auth/login`, dto);
-    return req$.pipe(tap(r => {
-      localStorage.setItem('accessToken', r.accessToken);
-      localStorage.setItem('refreshToken', r.refreshToken);
-      localStorage.setItem('usuario', JSON.stringify(r.usuario));
-      this._usuario.set(r.usuario);
-    }));
+  // Helpers
+  get token(): string | null {
+    return localStorage.getItem('accessToken');
   }
 
-  logout() {
-    localStorage.clear();
+  get refreshTokenValue(): string | null {
+    return localStorage.getItem('refreshToken');
+  }
+
+  login(dto: LoginRequestDto): Observable<AuthResponseDto> {
+    return this.authApi.login(dto).pipe(
+      map((res) => res.data),
+      tap((resp: AuthResponseDto) => this.guardarSesion(resp))
+    );
+  }
+
+  logout(): void {
+    const refreshToken = this.refreshTokenValue;
+
+    if (refreshToken) {
+      this.authApi
+        .logout({ refreshToken })
+        .pipe(finalize(() => this.limpiarSesion()))
+        .subscribe();
+    } else {
+      this.limpiarSesion();
+    }
+  }
+
+  refresh(): Observable<AuthResponseDto> {
+    const refreshToken = this.refreshTokenValue;
+
+    if (!refreshToken) {
+      this.limpiarSesion();
+      return throwError(() => new Error('No hay refresh token disponible'));
+    }
+
+    return this.authApi.refresh({ refreshToken }).pipe(
+      map((res) => res.data),
+      tap((resp: AuthResponseDto) => this.guardarSesion(resp))
+    );
+  }
+
+  cargarPerfil(): Observable<UsuarioMantenimientoResponseDto> {
+    return this.authApi.me().pipe(
+      map((res) => res.data),
+      tap((usuario) => {
+        localStorage.setItem('usuario', JSON.stringify(usuario));
+        this._usuario.set(usuario);
+      })
+    );
+  }
+
+  cambiarPassword(dto: CambioPasswordRequestDto): Observable<void> {
+    return this.authApi.cambiarPassword(dto).pipe(map(() => void 0));
+  }
+
+  /**
+   * Corrige la evaluación buscando la propiedad 'nombre' dentro de u.rol
+   */
+  tieneRol(roles?: string[]): boolean {
+    const u = this._usuario() as any;
+    if (!u || !u.rol) return false;
+    if (!roles || roles.length === 0) return true;
+
+    const rolNombre: string = typeof u.rol === 'object' ? u.rol.nombre : u.rol;
+    return roles.includes(rolNombre);
+  }
+
+  private guardarSesion(resp: AuthResponseDto): void {
+    localStorage.setItem('accessToken', resp.accessToken);
+    localStorage.setItem('refreshToken', resp.refreshToken);
+    localStorage.setItem('usuario', JSON.stringify(resp.usuario));
+    this._usuario.set(resp.usuario);
+  }
+
+  private limpiarSesion(): void {
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('usuario');
     this._usuario.set(null);
     this.router.navigate(['/login']);
   }
 
-  tieneRol(roles?: Rol[]) {
-    const u = this._usuario();
-    return !!u && (!roles || roles.includes(u.rol));
-  }
-
-  // Solo para desarrollo: usuarios admin,tutor, psicologo/ clave 1234
-  private mockLogin(dto: LoginRequest): Observable<AuthResponse> {
-    const roles: Record<string, Rol> = {
-      admin: 'ROLE_ADMINISTRADOR', tutor: 'ROLE_TUTOR', psicologo: 'ROLE_PSICOLOGO',
-    };
-    const rol = roles[dto.username];
-    if (!rol || dto.password !== '1234')
-      return throwError(() => new HttpErrorResponse({ status: 401 }));
-    return of({
-      accessToken: 'mock-token', refreshToken: 'mock-refresh',
-      usuario: { id: 1, nombres: dto.username, apellidos: '(mock)', rol },
-    }).pipe(delay(400));
+  private obtenerUsuarioInicial(): UsuarioMantenimientoResponseDto | null {
+    try {
+      const raw = localStorage.getItem('usuario');
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
   }
 }
