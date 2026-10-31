@@ -6,3 +6,7 @@
   --mat-menu-item-hover-state-layer-color: rgba(65, 105, 225, 0.12);
   --mat-menu-item-focus-state-layer-color: rgba(65, 105, 225, 0.12);
 }
+
+.swal2-container {
+    z-index: 2000 !important;
+}

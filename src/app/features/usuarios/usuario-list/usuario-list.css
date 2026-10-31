@@ -95,3 +95,8 @@
     color: #64748b;
     font-style: italic;
   }
+
+  mat-paginator {
+    margin-top: 12px;
+    margin-bottom: 24px;
+}

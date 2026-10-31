@@ -49,3 +49,14 @@
     text-align: center;
     padding: 24px;
 }
+
+.mat-column-acciones {
+    width: 1%;
+    white-space: nowrap;
+    text-align: right;
+}
+
+mat-paginator {
+    margin-top: 12px;
+    margin-bottom: 24px;
+}

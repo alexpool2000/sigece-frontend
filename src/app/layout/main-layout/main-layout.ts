@@ -24,7 +24,7 @@ const REGISTRO_INCIDENCIA: Rol[] = ['ROLE_TUTOR', 'ROLE_PSICOLOGO', 'ROLE_ADMINI
 
 const MENU: MenuItem[] = [
   { label: 'Incidencias', icon: 'folder_open', ruta: '/incidencias', roles: TODOS_LOS_ROLES },
-  { label: 'Nueva incidencia', icon: 'add_circle', ruta: '/incidencias/nueva', roles: REGISTRO_INCIDENCIA },
+  { label: 'Nueva incidencia', icon: 'add_circle', ruta: '/incidencias/nueva', roles: ['ROLE_TUTOR', 'ROLE_PSICOLOGO'] },
   { label: 'Estudiantes', icon: 'school', ruta: '/estudiantes', roles: TODOS_LOS_ROLES },
   { label: 'Apoderados', icon: 'family_restroom', ruta: '/apoderados', roles: TODOS_LOS_ROLES },
   { label: 'Notificaciones', icon: 'notifications', ruta: '/notificaciones', roles: NOTIFICACIONES_ROLES },
@@ -33,7 +33,7 @@ const MENU: MenuItem[] = [
   { label: 'Reportes', icon: 'assessment', ruta: '/reportes', roles: ROL_ADMIN },
   { label: 'Asignación Aulas', icon: 'meeting_room', ruta: '/admin/tutor-aulas', roles: ROL_ADMIN },
   { label: 'Tipos de incidencia', icon: 'category', ruta: '/admin/tipos-incidencia', roles: ROL_ADMIN },
-  { label: 'Usuarios y Roles', icon: 'manage_accounts', ruta: '/admin/usuarios',  roles: ROL_ADMIN },
+  { label: 'Usuarios y Roles', icon: 'manage_accounts', ruta: '/admin/usuarios', roles: ROL_ADMIN },
 ];
 
 @Component({
@@ -110,6 +110,13 @@ const MENU: MenuItem[] = [
       color: #ffffff;
       height: 64px;
       padding: 0 16px;
+      --mat-toolbar-container-text-color: #ffffff;
+    }
+
+    mat-toolbar .mat-mdc-button,
+    mat-toolbar .mat-mdc-icon-button,
+    mat-toolbar .mat-icon {
+      color: #ffffff;
     }
 
     .brand-title {
@@ -163,34 +170,45 @@ const MENU: MenuItem[] = [
     }
 
     mat-sidenav {
-      width: 250px;
-      transition: width 0.25s ease-in-out;
+      width: 260px;
+      transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
       overflow-x: hidden;
       white-space: nowrap;
       background: linear-gradient(135deg, royalblue, steelblue);
       background-attachment: fixed;
       border-right: none;
       border-radius: 0;
-
+      --mat-sidenav-container-shape: 0;
       --mat-list-list-item-label-text-color: #ffffff;
       --mat-list-list-item-leading-icon-color: #ffffff;
       --mat-list-list-item-hover-label-text-color: #ffffff;
       --mat-list-list-item-hover-leading-icon-color: #ffffff;
       --mat-list-list-item-focus-label-text-color: #ffffff;
+      --mat-list-list-item-container-shape: 0;
+      --mat-list-list-item-focus-container-shape: 0;
     }
 
-    mat-sidenav.mini {
-      width: 64px;
+    mat-sidenav.mini { 
+      width: 72px; 
     }
-
-    mat-sidenav.mini [matListItemTitle] {
-      display: none;
+    mat-sidenav [matListItemTitle] {
+      opacity: 1;
+      transition: opacity 0.35s ease-in-out;
     }
-
-    mat-sidenav.mini .mat-mdc-list-item {
-      padding-left: 4px;
+    mat-sidenav.mini [matListItemTitle] { 
+      opacity: 0;
+      pointer-events: none;
+    }
+    mat-sidenav.mini .mat-mdc-list-item { 
+      padding-left: 16px;
       justify-content: center;
     }
+
+    mat-sidenav .mat-mdc-list-item,
+    mat-sidenav .mat-mdc-list-item::before {
+      border-radius: 0;
+    }
+
 
     .contenido {
       padding: 24px;

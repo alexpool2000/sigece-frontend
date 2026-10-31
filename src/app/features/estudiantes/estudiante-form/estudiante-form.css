@@ -9,7 +9,7 @@
     grid-column: 1 / -1;
 }
 
-.backend-error-banner {
+.error-banner {
   display: flex;
   align-items: center;
   gap: 10px;

@@ -66,3 +66,8 @@
     align-items: center;
     justify-content: space-between;
 }
+
+mat-paginator {
+    margin-top: 12px;
+    margin-bottom: 24px;
+}

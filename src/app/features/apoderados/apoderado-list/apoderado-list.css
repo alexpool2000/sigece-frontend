@@ -32,3 +32,8 @@
     text-align: center;
     padding: 24px;
 }
+
+mat-paginator {
+    margin-top: 12px;
+    margin-bottom: 24px;
+}

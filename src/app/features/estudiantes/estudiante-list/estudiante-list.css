@@ -50,3 +50,8 @@
     opacity: .7;
     margin: 0 0 12px;
 }
+
+mat-paginator {
+    margin-top: 12px;
+    margin-bottom: 30px;
+}

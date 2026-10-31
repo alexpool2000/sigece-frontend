@@ -1,21 +1,23 @@
 <h2 mat-dialog-title>{{ datos ? 'Editar estudiante' : 'Nuevo estudiante' }}</h2>
-
 <mat-dialog-content>
+
   @if (backendError()) {
-  <div class="backend-error-banner">
-    <mat-icon color="warn">error</mat-icon>
-    <span>{{ backendError() }}</span>
-  </div>
+    <div class="error-banner">
+      <mat-icon color="warn">error</mat-icon>
+      <span>{{ backendError() }}</span>
+    </div>
   }
 
   <form [formGroup]="form" class="grid">
-    <!-- En lugar de form.controls.codigoSiagie.hasError(...) -->
     <mat-form-field appearance="outline" class="full">
       <mat-label>Código SIAGIE</mat-label>
       <input matInput formControlName="codigoSiagie" />
-
-      @if (form.get('codigoSiagie')?.hasError('required') && form.get('codigoSiagie')?.touched) {
-      <mat-error>Requerido</mat-error>
+      @if (form.controls.codigoSiagie.hasError('required')) {
+        <mat-error>Requerido</mat-error>
+      } @else if (form.controls.codigoSiagie.hasError('maxlength')) {
+        <mat-error>Máximo 20 caracteres</mat-error>
+      } @else if (errorBackend('codigoSiagie')) {
+        <mat-error>{{ errorBackend('codigoSiagie') }}</mat-error>
       }
     </mat-form-field>
 
@@ -23,7 +25,11 @@
       <mat-label>Nombres</mat-label>
       <input matInput formControlName="nombres" />
       @if (form.controls.nombres.hasError('required')) {
-      <mat-error>Requerido</mat-error>
+        <mat-error>Requerido</mat-error>
+      } @else if (form.controls.nombres.hasError('maxlength')) {
+        <mat-error>Máximo 100 caracteres</mat-error>
+      } @else if (errorBackend('nombres')) {
+        <mat-error>{{ errorBackend('nombres') }}</mat-error>
       }
     </mat-form-field>
 
@@ -31,7 +37,11 @@
       <mat-label>Apellidos</mat-label>
       <input matInput formControlName="apellidos" />
       @if (form.controls.apellidos.hasError('required')) {
-      <mat-error>Requerido</mat-error>
+        <mat-error>Requerido</mat-error>
+      } @else if (form.controls.apellidos.hasError('maxlength')) {
+        <mat-error>Máximo 100 caracteres</mat-error>
+      } @else if (errorBackend('apellidos')) {
+        <mat-error>{{ errorBackend('apellidos') }}</mat-error>
       }
     </mat-form-field>
 
@@ -39,19 +49,21 @@
       <mat-label>Fecha de nacimiento</mat-label>
       <input matInput type="date" formControlName="fechaNacimiento" [max]="maxFecha" />
       @if (form.controls.fechaNacimiento.hasError('required')) {
-      <mat-error>Requerida</mat-error>
+        <mat-error>Requerida</mat-error>
+      } @else if (errorBackend('fechaNacimiento')) {
+        <mat-error>{{ errorBackend('fechaNacimiento') }}</mat-error>
       }
     </mat-form-field>
 
     <mat-form-field appearance="outline">
       <mat-label>Nivel</mat-label>
       <mat-select formControlName="nivel">
-        @for (n of niveles; track n) {
-        <mat-option [value]="n">{{ n }}</mat-option>
-        }
+        @for (n of niveles; track n) { <mat-option [value]="n">{{ n }}</mat-option> }
       </mat-select>
       @if (form.controls.nivel.hasError('required')) {
-      <mat-error>Requerido</mat-error>
+        <mat-error>Requerido</mat-error>
+      } @else if (errorBackend('nivel')) {
+        <mat-error>{{ errorBackend('nivel') }}</mat-error>
       }
     </mat-form-field>
 
@@ -59,7 +71,11 @@
       <mat-label>Grado</mat-label>
       <input matInput formControlName="grado" />
       @if (form.controls.grado.hasError('required')) {
-      <mat-error>Requerido</mat-error>
+        <mat-error>Requerido</mat-error>
+      } @else if (form.controls.grado.hasError('maxlength')) {
+        <mat-error>Máximo 20 caracteres</mat-error>
+      } @else if (errorBackend('grado')) {
+        <mat-error>{{ errorBackend('grado') }}</mat-error>
       }
     </mat-form-field>
 
@@ -67,13 +83,17 @@
       <mat-label>Sección</mat-label>
       <input matInput formControlName="seccion" />
       @if (form.controls.seccion.hasError('required')) {
-      <mat-error>Requerida</mat-error>
+        <mat-error>Requerida</mat-error>
+      } @else if (form.controls.seccion.hasError('maxlength')) {
+        <mat-error>Máximo 10 caracteres</mat-error>
+      } @else if (errorBackend('seccion')) {
+        <mat-error>{{ errorBackend('seccion') }}</mat-error>
       }
     </mat-form-field>
   </form>
 </mat-dialog-content>
-
 <mat-dialog-actions align="end">
-  <button mat-button mat-dialog-close>Cancelar</button>
+  <!-- Cambiado mat-dialog-close por la función cancelar() para validar con SweetAlert -->
+  <button mat-button (click)="cancelar()">Cancelar</button>
   <button mat-flat-button (click)="guardar()" [disabled]="guardando()">Guardar</button>
 </mat-dialog-actions>
