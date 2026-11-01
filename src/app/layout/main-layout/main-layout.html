@@ -1,1 +1,58 @@
-<p>main-layout works!</p>
+<mat-toolbar>
+    <button mat-icon-button (click)="expandido.set(!expandido())" aria-label="Alternar menú">
+      <mat-icon>menu</mat-icon>
+    </button>
+  
+    <span class="brand-title">SIGECE</span>
+    <span class="sub-title d-none d-md-inline">- Convivencia Escolar</span>
+  
+    <span class="spacer"></span>
+  
+    <!-- Usuario y Rol Único -->
+    <button mat-button [matMenuTriggerFor]="menu" class="btn-usuario">
+      <mat-icon>account_circle</mat-icon>
+      <span class="user-name">{{ nombreUsuario() }}</span>
+      <span class="user-role-badge">{{ rolDisplay() }}</span>
+    </button>
+  
+    <mat-menu #menu="matMenu" class="menu-usuario">
+      <div class="user-header">
+        <p class="user-full-name">{{ nombreUsuarioCompleto() }}</p>
+        <small class="user-role-text">{{ rolDisplay() }}</small>
+      </div>
+      <button mat-menu-item routerLink="/perfil">
+        <mat-icon>badge</mat-icon>
+        <span>Mi Perfil</span>
+      </button>
+      <button mat-menu-item (click)="auth.logout()">
+        <mat-icon color="warn">logout</mat-icon>
+        <span>Cerrar sesión</span>
+      </button>
+    </mat-menu>
+  </mat-toolbar>
+  
+  <mat-sidenav-container autosize>
+    <mat-sidenav mode="side" opened [class.mini]="!expandido()">
+      <mat-nav-list>
+        @for (item of items(); track item.ruta; let i = $index) {
+          <!-- Título de sección cuando está expandido -->
+          @if (expandido() && item.seccion && (i === 0 || items()[i - 1].seccion !== item.seccion)) {
+            <div class="menu-seccion-header">{{ item.seccion }}</div>
+          } 
+          <!-- Divisor sutil cuando está contraído en modo mini -->
+          @else if (!expandido() && (i > 0 && items()[i - 1].seccion !== item.seccion)) {
+            <mat-divider class="mini-divider"></mat-divider>
+          }
+  
+          <a mat-list-item [routerLink]="item.ruta" routerLinkActive="activo" [attr.title]="item.label">
+            <mat-icon matListItemIcon>{{ item.icon }}</mat-icon>
+            <span matListItemTitle>{{ item.label }}</span>
+          </a>
+        }
+      </mat-nav-list>
+    </mat-sidenav>
+  
+    <mat-sidenav-content class="contenido">
+      <router-outlet />
+    </mat-sidenav-content>
+  </mat-sidenav-container>
