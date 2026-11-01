@@ -9,35 +9,36 @@
   <app-estado-chip [valor]="e.incidente.estado" />
   <span class="espacio"></span>
 
+  <!-- Rol: PSICÓLOGO resuelve el caso -->
   @if (e.incidente.estado === 'EN_SEGUIMIENTO' && esPsicologo) {
   <button mat-flat-button (click)="resolver()">
     Marcar como resuelto
   </button>
   }
 
+  <!-- CU19: Rol: ADMINISTRADOR cierra el caso -->
   @if (e.incidente.estado === 'RESUELTO' && esAdmin) {
   <button mat-flat-button (click)="cerrar()">
     Cerrar caso
   </button>
   }
 
-  @if (e.incidente.estado !== 'CERRADO' && (puedeEditar || puedeGestionar)) {
+  <!-- Más acciones: Oculto para Tutor -->
+  @if (e.incidente.estado !== 'CERRADO' && puedeModificarIncidente) {
   <button mat-stroked-button [matMenuTriggerFor]="menu">
     Más acciones <mat-icon>arrow_drop_down</mat-icon>
   </button>
 
   <mat-menu #menu="matMenu">
-    @if (puedeEditar && transiciones().length) {
+    @if (transiciones().length) {
     <button mat-menu-item (click)="cambiarEstado()">
       Cambiar estado
     </button>
     }
 
-    @if (puedeGestionar) {
     <button mat-menu-item (click)="cambiarGravedad(e.incidente.gravedad)">
       Cambiar gravedad
     </button>
-    }
 
     @if (esAdmin && !e.incidente.reportadoSiseve) {
     <button mat-menu-item (click)="derivarSiseve()">
@@ -113,9 +114,9 @@
     </dl>
   </mat-tab>
 
-  <!-- Pestaña: Involucrados -->
+  <!-- Pestaña: Involucrados (CU12: Solo el TUTOR puede agregar o retirar) -->
   <mat-tab [label]="'Involucrados (' + e.involucrados.length + ')'">
-    @if (puedeEditar && e.incidente.estado !== 'CERRADO') {
+    @if (esTutor && e.incidente.estado !== 'CERRADO') {
     <div class="barra">
       <button mat-flat-button (click)="agregarInvolucrado()">
         <mat-icon>person_add</mat-icon>
@@ -137,22 +138,18 @@
 
       <ng-container matColumnDef="documento">
         <th mat-header-cell *matHeaderCellDef>Documento</th>
-        <td mat-cell *matCellDef="let p">
-          {{ p.documentoIdentidad ?? '—' }}
-        </td>
+        <td mat-cell *matCellDef="let p">{{ p.documentoIdentidad ?? '—' }}</td>
       </ng-container>
 
       <ng-container matColumnDef="observaciones">
         <th mat-header-cell *matHeaderCellDef>Observaciones</th>
-        <td mat-cell *matCellDef="let p">
-          {{ p.observaciones ?? '—' }}
-        </td>
+        <td mat-cell *matCellDef="let p">{{ p.observaciones ?? '—' }}</td>
       </ng-container>
 
       <ng-container matColumnDef="acciones">
         <th mat-header-cell *matHeaderCellDef></th>
         <td mat-cell *matCellDef="let p">
-          @if (e.incidente.estado !== 'CERRADO') {
+          @if (esTutor && e.incidente.estado !== 'CERRADO') {
           <button mat-icon-button title="Retirar del caso" (click)="retirar(p)">
             <mat-icon>person_remove</mat-icon>
           </button>
@@ -171,28 +168,26 @@
     </table>
   </mat-tab>
 
-  <!-- Pestaña: Seguimiento -->
+  <!-- Pestaña: Seguimiento (CU15: Exclusivo del PSICÓLOGO registrar y actualizar) -->
   <mat-tab [label]="'Seguimiento (' + e.seguimiento.length + ')'">
-    <div class="acciones-seguimiento">
-      <button mat-raised-button color="primary" type="button" (click)="registrarAccionSeguimiento()"
-        [disabled]="!puedeEditar">
+    @if (esPsicologo && e.incidente.estado !== 'CERRADO') {
+    <div class="barra">
+      <button mat-raised-button color="primary" type="button" (click)="registrarAccionSeguimiento()">
         <mat-icon>add</mat-icon>
-        Registrar acción
+        Registrar acción de seguimiento
       </button>
     </div>
+    }
+
     <table mat-table [dataSource]="e.seguimiento">
       <ng-container matColumnDef="fecha">
         <th mat-header-cell *matHeaderCellDef>Fecha</th>
-        <td mat-cell *matCellDef="let a">
-          {{ a.fechaAccion | date: 'dd/MM/yyyy HH:mm' }}
-        </td>
+        <td mat-cell *matCellDef="let a">{{ a.fechaAccion | date: 'dd/MM/yyyy HH:mm' }}</td>
       </ng-container>
 
       <ng-container matColumnDef="tipo">
         <th mat-header-cell *matHeaderCellDef>Acción</th>
-        <td mat-cell *matCellDef="let a">
-          {{ a.tipoAccion.replaceAll('_', ' ') }}
-        </td>
+        <td mat-cell *matCellDef="let a">{{ a.tipoAccion.replaceAll('_', ' ') }}</td>
       </ng-container>
 
       <ng-container matColumnDef="descripcion">
@@ -208,9 +203,7 @@
       <ng-container matColumnDef="revision">
         <th mat-header-cell *matHeaderCellDef>Próxima revisión</th>
         <td mat-cell *matCellDef="let a">
-          {{ a.fechaProximaRevision
-          ? (a.fechaProximaRevision | date: 'dd/MM/yyyy')
-          : '—' }}
+          {{ a.fechaProximaRevision ? (a.fechaProximaRevision | date: 'dd/MM/yyyy') : '—' }}
         </td>
       </ng-container>
 
@@ -218,6 +211,28 @@
         <th mat-header-cell *matHeaderCellDef>Estado</th>
         <td mat-cell *matCellDef="let a">
           {{ a.estadoAccion.replaceAll('_', ' ') }}
+        </td>
+      </ng-container>
+
+      <!-- Columna Acciones: Solo visible para el Psicólogo para actualizar estado o reprogramar -->
+      <ng-container matColumnDef="acciones">
+        <th mat-header-cell *matHeaderCellDef></th>
+        <td mat-cell *matCellDef="let a">
+          @if (esPsicologo && e.incidente.estado !== 'CERRADO') {
+          <button mat-icon-button [matMenuTriggerFor]="menuAccion" title="Gestionar acción">
+            <mat-icon>more_vert</mat-icon>
+          </button>
+          <mat-menu #menuAccion="matMenu">
+            <button mat-menu-item (click)="actualizarEstadoAccion(a)">
+              <mat-icon>check_circle</mat-icon>
+              <span>Actualizar estado</span>
+            </button>
+            <button mat-menu-item (click)="reprogramarAccion(a)">
+              <mat-icon>event</mat-icon>
+              <span>Reprogramar revisión</span>
+            </button>
+          </mat-menu>
+          }
         </td>
       </ng-container>
 
@@ -232,9 +247,9 @@
     </table>
   </mat-tab>
 
-  <!-- Pestaña: Evidencias -->
+  <!-- Pestaña: Evidencias (CU14: Subida exclusiva del TUTOR) -->
   <mat-tab [label]="'Evidencias (' + e.evidencias.length + ')'">
-    @if (e.incidente.estado !== 'CERRADO') {
+    @if (esTutor && e.incidente.estado !== 'CERRADO') {
     <div class="barra">
       <button mat-flat-button (click)="subirEvidencia()">
         <mat-icon>upload_file</mat-icon>
@@ -274,11 +289,13 @@
             <mat-icon>download</mat-icon>
           </button>
 
+          @if (esAdmin || esPsicologo) {
           <button mat-icon-button title="Verificar integridad (SHA-256)" (click)="verificar(a)">
             <mat-icon>verified</mat-icon>
           </button>
+          }
 
-          @if (e.incidente.estado !== 'CERRADO') {
+          @if ((esAdmin || esTutor) && e.incidente.estado !== 'CERRADO') {
           <button mat-icon-button title="Eliminar" (click)="eliminarEvidencia(a)">
             <mat-icon>delete</mat-icon>
           </button>
@@ -297,14 +314,13 @@
     </table>
   </mat-tab>
 
-  <!-- Pestaña: Notificaciones -->
+  <!-- Pestaña: Notificaciones (CU18: Oculta para el Psicólogo) -->
+  @if (esAdmin || esTutor) {
   <mat-tab [label]="'Notificaciones (' + e.notificaciones.length + ')'">
     <table mat-table [dataSource]="e.notificaciones">
       <ng-container matColumnDef="tipo">
         <th mat-header-cell *matHeaderCellDef>Tipo</th>
-        <td mat-cell *matCellDef="let n">
-          {{ n.tipoNotificacion.replaceAll('_', ' ') }}
-        </td>
+        <td mat-cell *matCellDef="let n">{{ n.tipoNotificacion.replaceAll('_', ' ') }}</td>
       </ng-container>
 
       <ng-container matColumnDef="apoderado">
@@ -319,8 +335,7 @@
       <ng-container matColumnDef="canal">
         <th mat-header-cell *matHeaderCellDef>Canal</th>
         <td mat-cell *matCellDef="let n">
-          {{ n.canal.replaceAll('_', ' ') }}
-          · {{ n.origen === 'MANUAL' ? 'manual' : 'automática' }}
+          {{ n.canal.replaceAll('_', ' ') }} · {{ n.origen === 'MANUAL' ? 'manual' : 'automática' }}
         </td>
       </ng-container>
 
@@ -335,7 +350,6 @@
         <th mat-header-cell *matHeaderCellDef>Estado</th>
         <td mat-cell *matCellDef="let n">
           {{ n.estadoEnvio }}
-
           @if (n.detalleResultado) {
           <br />
           <small>{{ n.detalleResultado }}</small>
@@ -353,6 +367,7 @@
       </tr>
     </table>
   </mat-tab>
+  }
 
 </mat-tab-group>
 } @else if (estado() === 'error') {

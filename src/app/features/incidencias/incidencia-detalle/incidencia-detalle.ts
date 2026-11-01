@@ -1,4 +1,3 @@
-
 import { DatePipe } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
@@ -42,6 +41,7 @@ import { EvidenciaDialog } from '../evidencia-dialog/evidencia-dialog';
 
 @Component({
   selector: 'app-incidencia-detalle',
+  standalone: true,
   imports: [
     DatePipe,
     RouterLink,
@@ -64,25 +64,19 @@ export class IncidenciaDetalle {
   private readonly snack = inject(MatSnackBar);
   private readonly auth = inject(Auth);
 
-
-
   private readonly id = this.route.snapshot.paramMap.get('id')!;
   private readonly recarga = signal(0);
 
-  readonly puedeEditar = this.auth.tieneRol([
-    'ROLE_TUTOR',
-    'ROLE_PSICOLOGO',
-  ]);
-
-  readonly puedeGestionar = this.auth.tieneRol([
-    'ROLE_ADMINISTRADOR',
-    'ROLE_PSICOLOGO',
-  ]);
-
+  // --- Roles RBAC ---
   readonly esAdmin = this.auth.tieneRol(['ROLE_ADMINISTRADOR']);
+  readonly esTutor = this.auth.tieneRol(['ROLE_TUTOR']);
   readonly esPsicologo = this.auth.tieneRol(['ROLE_PSICOLOGO']);
 
-  readonly columnasInvolucrados: string[] = this.puedeEditar
+  // Permisos según Contratos Backend y CU
+  readonly puedeModificarIncidente = this.esAdmin || this.esPsicologo; // Cambiar gravedad y estado
+
+  // Involucrados: CU12 y backend (@PreAuthorize("hasRole('TUTOR')")) -> Exclusivo TUTOR
+  readonly columnasInvolucrados: string[] = this.esTutor
     ? ['rol', 'nombre', 'documento', 'observaciones', 'acciones']
     : ['rol', 'nombre', 'documento', 'observaciones'];
 
@@ -93,14 +87,10 @@ export class IncidenciaDetalle {
     'acciones',
   ];
 
-  readonly columnasSeguimiento: string[] = [
-    'fecha',
-    'tipo',
-    'descripcion',
-    'usuario',
-    'revision',
-    'estado',
-  ];
+  // Seguimiento: Las acciones de editar estado/reprogramar solo se muestran al PSICÓLOGO
+  readonly columnasSeguimiento: string[] = this.esPsicologo
+    ? ['fecha', 'tipo', 'descripcion', 'usuario', 'revision', 'estado', 'acciones']
+    : ['fecha', 'tipo', 'descripcion', 'usuario', 'revision', 'estado'];
 
   readonly columnasNotificaciones: string[] = [
     'tipo',
@@ -118,15 +108,12 @@ export class IncidenciaDetalle {
       : Math.max(1, Math.round(bytes / 1024)) + ' KB';
   }
 
-
   readonly expediente = toSignal(
     toObservable(this.recarga).pipe(
       switchMap(() =>
         this.api.obtener(this.id).pipe(
           switchMap((expediente) => {
-            if (!expediente) {
-              return of(null);
-            }
+            if (!expediente) return of(null);
 
             return this.accionesApi
               .listarPorIncidente(this.id)
@@ -139,9 +126,7 @@ export class IncidenciaDetalle {
               );
           }),
           tap((expediente) => {
-            if (expediente) {
-              this.estado.set('ok');
-            }
+            if (expediente) this.estado.set('ok');
           }),
           catchError(() => {
             this.estado.set('error');
@@ -153,15 +138,10 @@ export class IncidenciaDetalle {
     { initialValue: null },
   );
 
-  /** Estados a los que se puede pasar manualmente.
-   * Resolver y cerrar tienen sus propios botones.
-   */
   readonly transiciones = toSignal(
     toObservable(this.recarga).pipe(
       switchMap(() =>
-        this.api.transiciones(this.id).pipe(
-          catchError(() => of([])),
-        ),
+        this.api.transiciones(this.id).pipe(catchError(() => of([]))),
       ),
       map((lista) =>
         lista.filter(
@@ -177,9 +157,11 @@ export class IncidenciaDetalle {
     this.recarga.update((n) => n + 1);
   }
 
-  // ---------- Involucrados ----------
+  // ---------- Involucrados (Solo Tutor) ----------
 
   agregarInvolucrado(): void {
+    if (!this.esTutor) return;
+
     this.dialog
       .open(InvolucradoDialog, { width: '520px' })
       .afterClosed()
@@ -193,6 +175,8 @@ export class IncidenciaDetalle {
   }
 
   retirar(p: Involucrado): void {
+    if (!this.esTutor) return;
+
     this.dialog
       .open(MotivoDialog, {
         width: '480px',
@@ -215,6 +199,8 @@ export class IncidenciaDetalle {
   // ---------- Evidencias ----------
 
   subirEvidencia(): void {
+    if (!this.esTutor) return;
+
     this.dialog
       .open(EvidenciaDialog, { width: '520px' })
       .afterClosed()
@@ -250,6 +236,8 @@ export class IncidenciaDetalle {
   }
 
   verificar(a: Adjunto): void {
+    if (!this.esAdmin && !this.esPsicologo) return;
+
     this.api.verificarIntegridad(a.id).subscribe((r) =>
       this.snack.open(
         r.integro
@@ -262,6 +250,8 @@ export class IncidenciaDetalle {
   }
 
   eliminarEvidencia(a: Adjunto): void {
+    if (!this.esAdmin && !this.esTutor) return;
+
     this.dialog
       .open(MotivoDialog, {
         width: '480px',
@@ -281,9 +271,11 @@ export class IncidenciaDetalle {
       .subscribe(() => this.refrescar('Evidencia eliminada'));
   }
 
-
+  // ---------- Seguimiento (CU15 - Exclusivo PSICÓLOGO) ----------
 
   registrarAccionSeguimiento(): void {
+    if (!this.esPsicologo) return;
+
     this.abrir(
       {
         titulo: 'Registrar acción de seguimiento',
@@ -295,42 +287,15 @@ export class IncidenciaDetalle {
             tipo: 'select',
             requerido: true,
             opciones: [
-              {
-                valor: 'ENTREVISTA_ESTUDIANTE',
-                texto: 'Entrevista al estudiante',
-              },
-              {
-                valor: 'ENTREVISTA_PADRES',
-                texto: 'Entrevista a los padres',
-              },
-              {
-                valor: 'CITACION_APODERADO',
-                texto: 'Citación al apoderado',
-              },
-              {
-                valor: 'DERIVACION_PSICOLOGIA',
-                texto: 'Derivación a psicología',
-              },
-              {
-                valor: 'MEDIDA_CORRECTIVA_FORMATIVA',
-                texto: 'Medida correctiva o formativa',
-              },
-              {
-                valor: 'DERIVACION_DEMUNA_CEM',
-                texto: 'Derivación a DEMUNA/CEM',
-              },
-              {
-                valor: 'ACTA_COMPROMISO',
-                texto: 'Acta de compromiso',
-              },
-              {
-                valor: 'APUNTE_INTERNO',
-                texto: 'Apunte interno',
-              },
-              {
-                valor: 'OTRO',
-                texto: 'Otro',
-              },
+              { valor: 'ENTREVISTA_ESTUDIANTE', texto: 'Entrevista al estudiante' },
+              { valor: 'ENTREVISTA_PADRES', texto: 'Entrevista a los padres' },
+              { valor: 'CITACION_APODERADO', texto: 'Citación al apoderado' },
+              { valor: 'DERIVACION_PSICOLOGIA', texto: 'Derivación a psicología' },
+              { valor: 'MEDIDA_CORRECTIVA_FORMATIVA', texto: 'Medida correctiva o formativa' },
+              { valor: 'DERIVACION_DEMUNA_CEM', texto: 'Derivación a DEMUNA/CEM' },
+              { valor: 'ACTA_COMPROMISO', texto: 'Acta de compromiso' },
+              { valor: 'APUNTE_INTERNO', texto: 'Apunte interno' },
+              { valor: 'OTRO', texto: 'Otro' },
             ],
           },
           {
@@ -362,7 +327,80 @@ export class IncidenciaDetalle {
     );
   }
 
+  // Actualizar estado de una acción (PENDIENTE -> EN_PROCESO -> COMPLETADA / CANCELADA)
+  actualizarEstadoAccion(accion: any): void {
+    if (!this.esPsicologo) return;
 
+    this.abrir(
+      {
+        titulo: 'Actualizar estado de la acción',
+        confirmar: 'Guardar estado',
+        campos: [
+          {
+            nombre: 'estado',
+            etiqueta: 'Nuevo estado',
+            tipo: 'select',
+            requerido: true,
+            valor: accion.estadoAccion,
+            opciones: [
+              { valor: 'PENDIENTE', texto: 'Pendiente' },
+              { valor: 'EN_PROCESO', texto: 'En proceso' },
+              { valor: 'COMPLETADA', texto: 'Completada' },
+              { valor: 'CANCELADA', texto: 'Cancelada' },
+            ],
+          },
+          {
+            nombre: 'observaciones',
+            etiqueta: 'Observaciones de avance o cierre',
+            tipo: 'area',
+            requerido: false,
+          },
+        ],
+      },
+      (v) =>
+        (this.accionesApi as any)
+          .actualizarEstado(accion.id, {
+            estado: v.estado,
+            observaciones: v.observaciones || undefined,
+          })
+          .pipe(map(() => undefined)),
+      'Estado de la acción actualizado',
+    );
+  }
+
+  // Reprogramar fecha de próxima revisión
+  reprogramarAccion(accion: any): void {
+    if (!this.esPsicologo) return;
+
+    this.abrir(
+      {
+        titulo: 'Reprogramar próxima revisión',
+        confirmar: 'Reprogramar',
+        campos: [
+          {
+            nombre: 'fechaProximaRevision',
+            etiqueta: 'Nueva fecha de revisión',
+            tipo: 'fecha',
+            requerido: true,
+          },
+          {
+            nombre: 'motivo',
+            etiqueta: 'Motivo de la reprogramación',
+            tipo: 'area',
+            requerido: true,
+          },
+        ],
+      },
+      (v) =>
+        (this.accionesApi as any)
+          .reprogramar(accion.id, {
+            fechaProximaRevision: new Date(v.fechaProximaRevision).toISOString(),
+            motivo: v.motivo,
+          })
+          .pipe(map(() => undefined)),
+      'Próxima revisión reprogramada',
+    );
+  }
 
   // ---------- Acciones sobre el caso ----------
 
@@ -434,12 +472,7 @@ export class IncidenciaDetalle {
           },
         ],
       },
-      (v) =>
-        this.api.clasificarGravedad(
-          this.id,
-          v.gravedad,
-          v.justificacion,
-        ),
+      (v) => this.api.clasificarGravedad(this.id, v.gravedad, v.justificacion),
       'Gravedad actualizada',
     );
   }
@@ -464,11 +497,9 @@ export class IncidenciaDetalle {
   }
 
   cerrar(): void {
-    // El backend decide si permite cerrar el caso.
     this.api.checklistCierre(this.id).subscribe((c) => {
       const mensaje = c.observacionesPendientes.length
-        ? 'Pendiente antes de cerrar:\n- ' +
-        c.observacionesPendientes.join('\n- ')
+        ? 'Pendiente antes de cerrar:\n- ' + c.observacionesPendientes.join('\n- ')
         : 'El cierre es definitivo. Registra el acta y las conclusiones.';
 
       this.abrir(
@@ -492,12 +523,7 @@ export class IncidenciaDetalle {
             },
           ],
         },
-        (v) =>
-          this.api.cerrar(
-            this.id,
-            v.actaCierre,
-            v.conclusionesFinales,
-          ),
+        (v) => this.api.cerrar(this.id, v.actaCierre, v.conclusionesFinales),
         'Caso cerrado',
       );
     });
