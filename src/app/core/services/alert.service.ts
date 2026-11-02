@@ -43,6 +43,7 @@ export class AlertService {
     return r.isConfirmed;
   }
 
+  /** Éxito temporal automático (se cierra solo) */
   exito(mensaje: string, detalle = '') {
     Swal.fire({
       icon: 'success',
@@ -52,6 +53,24 @@ export class AlertService {
       timerProgressBar: true,
       showConfirmButton: false,
     });
+  }
+
+  /** NUEVO: Éxito con botón OK que espera a que el usuario haga clic */
+  async exitoConConfirmacion(
+    titulo: string,
+    texto = '',
+    confirmarTxt = 'Aceptar'
+  ): Promise<boolean> {
+    const r = await Swal.fire({
+      icon: 'success',
+      title: titulo,
+      text: texto,
+      confirmButtonText: confirmarTxt,
+      confirmButtonColor: '#2563eb',
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+    });
+    return r.isConfirmed;
   }
 
   error(mensaje: string, titulo = 'Ocurrió un error') {

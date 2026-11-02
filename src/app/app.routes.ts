@@ -159,7 +159,7 @@ export const routes: Routes = [
       // TODO: Crear componente features/perfil/perfil-usuario
       {
         path: 'perfil',
-        loadComponent: placeholder,
+        loadComponent: () => import('./features/perfil/perfil').then((m) => m.Perfil),
         data: { titulo: 'Mi Perfil' },
       },
 

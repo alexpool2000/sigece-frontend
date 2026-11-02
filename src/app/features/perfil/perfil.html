@@ -1,1 +1,173 @@
-<p>perfil works!</p>
+<a mat-button routerLink="/incidencias">
+    <mat-icon>arrow_back</mat-icon> Volver al inicio
+  </a>
+  
+  @if (usuario(); as u) {
+  <header class="cabecera">
+    <div class="avatar-perfil">
+      <mat-icon>account_circle</mat-icon>
+    </div>
+    
+    <div class="identidad">
+      <h2>
+        {{ (u.nombres ?? '') + ' ' + (u.apellidos ?? '') || u.username }}
+      </h2>
+      <p class="subtitulo">{{ u.correo ?? u.email ?? 'Sin correo registrado' }}</p>
+    </div>
+  
+    <span class="espacio"></span>
+  
+    <!-- Rol corregido (extrae el nombre sin ROLE_) -->
+    <span class="badge-rol">{{ obtenerNombreRol(u.rol) }}</span>
+  
+    <!-- Estado activo -->
+    <span class="badge-estado" [class.inactivo]="u.activo === false">
+      {{ u.activo !== false ? 'Activo' : 'Inactivo' }}
+    </span>
+  </header>
+  
+  <mat-tab-group animationDuration="0ms">
+  
+    <!-- Pestaña: Información de la cuenta -->
+    <mat-tab label="Información personal">
+      <dl class="datos">
+        <dt>Nombre de usuario</dt>
+        <dd>{{ u.username }}</dd>
+  
+        <dt>Nombres y Apellidos</dt>
+        <dd>{{ (u.nombres ?? '') + ' ' + (u.apellidos ?? '') }}</dd>
+  
+        <dt>Correo electrónico</dt>
+        <dd>{{ u.correo ?? u.email ?? '—' }}</dd>
+  
+        <!-- DNI exacto de tu backend -->
+        <dt>Documento / DNI</dt>
+        <dd>{{ u.dni ?? '—' }}</dd>
+  
+        <!-- Teléfono -->
+        <dt>Teléfono</dt>
+        <dd>{{ u.telefono ?? '—' }}</dd>
+  
+        <!-- Rol y descripción -->
+        <dt>Rol en el sistema</dt>
+        <dd>
+          <strong>{{ obtenerNombreRol(u.rol) }}</strong>
+          @if (u.rol?.descripcion) {
+            <br />
+            <small class="texto-secundario">{{ u.rol.descripcion }}</small>
+          }
+        </dd>
+  
+        <dt>Estado de cuenta</dt>
+        <dd>{{ u.activo !== false ? 'Cuenta activa' : 'Cuenta inactiva' }}</dd>
+  
+        @if (u.ultimoAcceso) {
+          <dt>Último acceso</dt>
+          <dd>{{ u.ultimoAcceso | date: 'dd/MM/yyyy HH:mm' }}</dd>
+        }
+      </dl>
+    </mat-tab>
+  
+    <!-- Pestaña: Seguridad y Clave -->
+    <mat-tab label="Seguridad">
+      <div class="contenedor-formulario">
+        <p class="indicaciones">
+          Ingresa tu contraseña actual y define una nueva de al menos 8 caracteres para proteger tu cuenta.
+        </p>
+  
+        <form [formGroup]="formPassword" (ngSubmit)="cambiarPassword()" class="form-seguridad">
+          
+          <!-- Contraseña Actual -->
+          <mat-form-field appearance="outline">
+            <mat-label>Contraseña actual</mat-label>
+            <input
+              matInput
+              [type]="ocultarActual() ? 'password' : 'text'"
+              formControlName="passwordActual"
+              placeholder="Escribe tu contraseña actual"
+            />
+            <button
+              mat-icon-button
+              matSuffix
+              type="button"
+              (click)="ocultarActual.set(!ocultarActual())"
+            >
+              <mat-icon>{{ ocultarActual() ? 'visibility_off' : 'visibility' }}</mat-icon>
+            </button>
+            @if (formPassword.get('passwordActual')?.hasError('required') && formPassword.get('passwordActual')?.touched) {
+              <mat-error>La contraseña actual es obligatoria</mat-error>
+            }
+          </mat-form-field>
+  
+          <!-- Nueva Contraseña -->
+          <mat-form-field appearance="outline">
+            <mat-label>Nueva contraseña</mat-label>
+            <input
+              matInput
+              [type]="ocultarNuevo() ? 'password' : 'text'"
+              formControlName="nuevoPassword"
+              placeholder="Mínimo 8 caracteres"
+            />
+            <button
+              mat-icon-button
+              matSuffix
+              type="button"
+              (click)="ocultarNuevo.set(!ocultarNuevo())"
+            >
+              <mat-icon>{{ ocultarNuevo() ? 'visibility_off' : 'visibility' }}</mat-icon>
+            </button>
+            @if (formPassword.get('nuevoPassword')?.hasError('required') && formPassword.get('nuevoPassword')?.touched) {
+              <mat-error>La nueva contraseña es obligatoria</mat-error>
+            }
+            @if (formPassword.get('nuevoPassword')?.hasError('minlength')) {
+              <mat-error>Debe contener al menos 8 caracteres</mat-error>
+            }
+          </mat-form-field>
+  
+        <!-- Confirmar Nueva Contraseña -->
+        <mat-form-field appearance="outline">
+            <mat-label>Confirmar nueva contraseña</mat-label>
+            <input
+            matInput
+            [type]="ocultarConfirmar() ? 'password' : 'text'"
+            formControlName="confirmacionPassword"
+            placeholder="Repite la nueva contraseña"
+            />
+            <button
+            mat-icon-button
+            matSuffix
+            type="button"
+            (click)="ocultarConfirmar.set(!ocultarConfirmar())"
+            >
+            <mat-icon>{{ ocultarConfirmar() ? 'visibility_off' : 'visibility' }}</mat-icon>
+            </button>
+            @if (formPassword.get('confirmacionPassword')?.hasError('required') && formPassword.get('confirmacionPassword')?.touched) {
+            <mat-error>Debe confirmar la nueva contraseña</mat-error>
+            }
+            @if (formPassword.hasError('passwordMismatch') && formPassword.get('confirmacionPassword')?.touched) {
+            <mat-error>Las contraseñas no coinciden</mat-error>
+            }
+        </mat-form-field>
+  
+          <div class="acciones-form">
+            <button
+              mat-flat-button
+              type="submit"
+              [disabled]="formPassword.invalid || guardandoPassword()"
+            >
+              <mat-icon>lock_reset</mat-icon>
+              {{ guardandoPassword() ? 'Actualizando…' : 'Actualizar contraseña' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </mat-tab>
+  
+  </mat-tab-group>
+  } @else if (estado() === 'error') {
+  <p class="vacio">
+    No se pudo cargar la información de tu perfil.
+  </p>
+  } @else {
+  <p class="vacio">Cargando perfil…</p>
+  }

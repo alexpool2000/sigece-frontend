@@ -1,0 +1,121 @@
+:host {
+    display: block;
+    padding: 1.5rem;
+  }
+  
+  /* Cabecera con lenguaje visual idéntico al expediente */
+  .cabecera {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+    margin: 1.25rem 0 1.5rem 0;
+    flex-wrap: wrap;
+  }
+  
+  .avatar-perfil mat-icon {
+    font-size: 56px;
+    width: 56px;
+    height: 56px;
+    color: #3b82f6;
+  }
+  
+  .identidad h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #1e293b;
+  }
+  
+  .identidad .subtitulo {
+    margin: 0.25rem 0 0 0;
+    color: #64748b;
+    font-size: 0.875rem;
+  }
+  
+  .espacio {
+    flex: 1;
+  }
+  
+  /* Badges / Chips minimalistas alineados al sistema */
+  .badge-rol {
+    display: inline-block;
+    padding: 0.35rem 0.85rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    border-radius: 9999px;
+    background-color: #e0e7ff;
+    color: #3730a3;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  
+  .badge-estado {
+    display: inline-block;
+    padding: 0.35rem 0.85rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    border-radius: 9999px;
+    background-color: #dcfce7;
+    color: #166534;
+  }
+  
+  .badge-estado.inactivo {
+    background-color: #fee2e2;
+    color: #991b1b;
+  }
+  
+  /* Lista de definición consistente con 'dl.datos' de expediente */
+  dl.datos {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 1rem 1.5rem;
+    margin: 1.75rem 0;
+    font-size: 0.95rem;
+  }
+  
+  dt {
+    font-weight: 600;
+    color: #475569;
+  }
+  
+  dd {
+    margin: 0;
+    color: #1e293b;
+  }
+  
+  /* Pestaña de seguridad y formulario */
+  .contenedor-formulario {
+    padding: 1.5rem 0;
+    max-width: 480px;
+  }
+  
+  .indicaciones {
+    color: #64748b;
+    font-size: 0.9rem;
+    margin-bottom: 1.5rem;
+    line-height: 1.4;
+  }
+  
+  .form-seguridad {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .form-seguridad mat-form-field {
+    width: 100%;
+  }
+  
+  .acciones-form {
+    margin-top: 1rem;
+    display: flex;
+    justify-content: flex-start;
+  }
+  
+  /* Estado de carga y mensajes vacíos */
+  .vacio {
+    color: #64748b;
+    font-style: italic;
+    padding: 3rem 0;
+    text-align: center;
+  }
