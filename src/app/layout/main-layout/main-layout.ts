@@ -18,7 +18,6 @@ export interface MenuItem {
   seccion?: string;
 }
 
-// Matriz de permisos alineada 100% al Diagrama de Casos de Uso
 const ROL_ADMIN: Rol[] = ['ROLE_ADMINISTRADOR'];
 const ROL_TUTOR: Rol[] = ['ROLE_TUTOR'];
 const ADMIN_Y_TUTOR: Rol[] = ['ROLE_ADMINISTRADOR', 'ROLE_TUTOR'];

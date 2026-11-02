@@ -3,132 +3,119 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { map, Observable } from 'rxjs';
 
 import { environment } from '../../../environments/environment';
+import { ApiResponse } from '../models/api.models';
 import {
-    AccionSeguimiento,
-    EstadoAccion,
-    TipoAccion,
-} from '../models/incidente.models';
-
-interface ApiResponse<T> {
-    data: T;
-    message?: string;
-}
-
-export interface AccionSeguimientoRequest {
-    tipoAccion: TipoAccion;
-    descripcion: string;
-    fechaAccion?: string | null;
-    fechaProgramada?: string | null;
-    fechaProximaRevision?: string | null;
-}
-
-export interface AccionEstadoRequest {
-    nuevoEstado: EstadoAccion;
-    comentarioEjecucion?: string | null;
-}
-
-export interface AccionRevisionRequest {
-    nuevaFechaRevision: string;
-    justificacion: string;
-}
+  AccionEstadoRequestDto,
+  AccionFiltroRequestDto,
+  AccionRevisionRequestDto,
+  AccionSeguimientoRequestDto,
+  AccionSeguimientoResponseDto,
+} from '../models/accion.models';
 
 @Injectable({
-    providedIn: 'root',
+  providedIn: 'root',
 })
 export class AccionSeguimientoApi {
-    private readonly http = inject(HttpClient);
+  private readonly http = inject(HttpClient);
+  private readonly baseUrl = `${environment.apiUrl}/acciones-seguimiento`;
 
-    private readonly baseUrl =
-        `${environment.apiUrl}/acciones-seguimiento`;
+  // GET /api/v1/acciones-seguimiento/incidente/{incidenteId}
+  listarPorIncidente(
+    incidenteId: string,
+  ): Observable<AccionSeguimientoResponseDto[]> {
+    return this.http
+      .get<ApiResponse<AccionSeguimientoResponseDto[]>>(
+        `${this.baseUrl}/incidente/${incidenteId}`,
+      )
+      .pipe(map((response) => response.data));
+  }
 
-    listarPorIncidente(
-        incidenteId: string,
-    ): Observable<AccionSeguimiento[]> {
-        return this.http
-            .get<ApiResponse<AccionSeguimiento[]>>(
-                `${this.baseUrl}/incidente/${incidenteId}`,
-            )
-            .pipe(map((response) => response.data));
-    }
+  // POST /api/v1/acciones-seguimiento/incidente/{incidenteId}
+  registrar(
+    incidenteId: string,
+    request: AccionSeguimientoRequestDto,
+  ): Observable<AccionSeguimientoResponseDto> {
+    return this.http
+      .post<ApiResponse<AccionSeguimientoResponseDto>>(
+        `${this.baseUrl}/incidente/${incidenteId}`,
+        request,
+      )
+      .pipe(map((response) => response.data));
+  }
 
-    registrar(
-        incidenteId: string,
-        request: AccionSeguimientoRequest,
-    ): Observable<AccionSeguimiento> {
-        return this.http
-            .post<ApiResponse<AccionSeguimiento>>(
-                `${this.baseUrl}/incidente/${incidenteId}`,
-                request,
-            )
-            .pipe(map((response) => response.data));
-    }
+  // GET /api/v1/acciones-seguimiento/{accionId}
+  obtenerPorId(
+    accionId: number,
+  ): Observable<AccionSeguimientoResponseDto> {
+    return this.http
+      .get<ApiResponse<AccionSeguimientoResponseDto>>(
+        `${this.baseUrl}/${accionId}`,
+      )
+      .pipe(map((response) => response.data));
+  }
 
-    obtenerPorId(
-        accionId: number,
-    ): Observable<AccionSeguimiento> {
-        return this.http
-            .get<ApiResponse<AccionSeguimiento>>(
-                `${this.baseUrl}/${accionId}`,
-            )
-            .pipe(map((response) => response.data));
-    }
+  // PATCH /api/v1/acciones-seguimiento/{accionId}/estado
+  actualizarEstado(
+    accionId: number,
+    request: AccionEstadoRequestDto,
+  ): Observable<AccionSeguimientoResponseDto> {
+    return this.http
+      .patch<ApiResponse<AccionSeguimientoResponseDto>>(
+        `${this.baseUrl}/${accionId}/estado`,
+        request,
+      )
+      .pipe(map((response) => response.data));
+  }
 
-    actualizarEstado(
-        accionId: number,
-        request: AccionEstadoRequest,
-    ): Observable<AccionSeguimiento> {
-        return this.http
-            .patch<ApiResponse<AccionSeguimiento>>(
-                `${this.baseUrl}/${accionId}/estado`,
-                request,
-            )
-            .pipe(map((response) => response.data));
-    }
+  // PATCH /api/v1/acciones-seguimiento/{accionId}/revision
+  reprogramarRevision(
+    accionId: number,
+    request: AccionRevisionRequestDto,
+  ): Observable<AccionSeguimientoResponseDto> {
+    return this.http
+      .patch<ApiResponse<AccionSeguimientoResponseDto>>(
+        `${this.baseUrl}/${accionId}/revision`,
+        request,
+      )
+      .pipe(map((response) => response.data));
+  }
 
-    reprogramarRevision(
-        accionId: number,
-        request: AccionRevisionRequest,
-    ): Observable<AccionSeguimiento> {
-        return this.http
-            .patch<ApiResponse<AccionSeguimiento>>(
-                `${this.baseUrl}/${accionId}/revision`,
-                request,
-            )
-            .pipe(map((response) => response.data));
-    }
+  // GET /api/v1/acciones-seguimiento/usuario/{usuarioId}/pendientes
+  listarPendientesPorUsuario(
+    usuarioId: number,
+  ): Observable<AccionSeguimientoResponseDto[]> {
+    return this.http
+      .get<ApiResponse<AccionSeguimientoResponseDto[]>>(
+        `${this.baseUrl}/usuario/${usuarioId}/pendientes`,
+      )
+      .pipe(map((response) => response.data));
+  }
 
-    listarPendientesPorUsuario(
-        usuarioId: number,
-    ): Observable<AccionSeguimiento[]> {
-        return this.http
-            .get<ApiResponse<AccionSeguimiento[]>>(
-                `${this.baseUrl}/usuario/${usuarioId}/pendientes`,
-            )
-            .pipe(map((response) => response.data));
-    }
+  // GET /api/v1/acciones-seguimiento/vencidas
+  listarVencidas(): Observable<AccionSeguimientoResponseDto[]> {
+    return this.http
+      .get<ApiResponse<AccionSeguimientoResponseDto[]>>(
+        `${this.baseUrl}/vencidas`,
+      )
+      .pipe(map((response) => response.data));
+  }
 
-    listarVencidas(): Observable<AccionSeguimiento[]> {
-        return this.http
-            .get<ApiResponse<AccionSeguimiento[]>>(
-                `${this.baseUrl}/vencidas`,
-            )
-            .pipe(map((response) => response.data));
-    }
+  // GET /api/v1/acciones-seguimiento/buscar
+  buscarPorTipo(
+    filtro: AccionFiltroRequestDto,
+  ): Observable<AccionSeguimientoResponseDto[]> {
+    let params = new HttpParams();
 
-    buscarPorFiltros(
-        filtros: Record<string, string | number | boolean>,
-    ): Observable<AccionSeguimiento[]> {
-        let params = new HttpParams();
+    if (filtro.tipoAccion) params = params.set('tipoAccion', filtro.tipoAccion);
+    if (filtro.estadoAccion) params = params.set('estadoAccion', filtro.estadoAccion);
+    if (filtro.fechaDesde) params = params.set('fechaDesde', filtro.fechaDesde);
+    if (filtro.fechaHasta) params = params.set('fechaHasta', filtro.fechaHasta);
 
-        for (const [clave, valor] of Object.entries(filtros)) {
-            params = params.set(clave, String(valor));
-        }
-
-        return this.http
-            .get<ApiResponse<AccionSeguimiento[]>>(
-                `${this.baseUrl}/buscar`,
-                { params },
-            )
-            .pipe(map((response) => response.data));
-    }
+    return this.http
+      .get<ApiResponse<AccionSeguimientoResponseDto[]>>(
+        `${this.baseUrl}/buscar`,
+        { params },
+      )
+      .pipe(map((response) => response.data));
+  }
 }

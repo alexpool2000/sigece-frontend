@@ -29,6 +29,15 @@ import { IncidenteApi } from '../../../core/services/incidente-api';
 import { AccionSeguimientoApi } from '../../../core/services/accion-seguimiento-api';
 
 import {
+  AccionEstadoRequestDto,
+  AccionRevisionRequestDto,
+  AccionSeguimientoRequestDto,
+  AccionSeguimientoResponseDto,
+  EstadoAccion,
+  TipoAccion,
+} from '../../../core/models/accion.models';
+
+import {
   AccionData,
   AccionDialog,
 } from '../../../shared/accion-dialog/accion-dialog';
@@ -38,6 +47,24 @@ import { MotivoDialog } from '../../../shared/motivo-dialog/motivo-dialog';
 
 import { InvolucradoDialog } from '../involucrado-dialog/involucrado-dialog';
 import { EvidenciaDialog } from '../evidencia-dialog/evidencia-dialog';
+
+// Utilidades para parsear fechas hacia los tipos de Java (LocalDate y OffsetDateTime)
+function aLocalDateString(valor: Date | string | null | undefined): string | null {
+  if (!valor) return null;
+  const d = new Date(valor);
+  if (isNaN(d.getTime())) return null;
+  const anio = d.getFullYear();
+  const mes = String(d.getMonth() + 1).padStart(2, '0');
+  const dia = String(d.getDate()).padStart(2, '0');
+  return `${anio}-${mes}-${dia}`;
+}
+
+function aOffsetDateTimeString(valor: Date | string | null | undefined): string | null {
+  if (!valor) return null;
+  const d = new Date(valor);
+  if (isNaN(d.getTime())) return null;
+  return d.toISOString();
+}
 
 @Component({
   selector: 'app-incidencia-detalle',
@@ -73,10 +100,16 @@ export class IncidenciaDetalle {
   readonly esPsicologo = this.auth.tieneRol(['ROLE_PSICOLOGO']);
 
   // Permisos según Contratos Backend y CU
-  readonly puedeModificarIncidente = this.esAdmin || this.esPsicologo; // Cambiar gravedad y estado
+  readonly puedeModificarIncidente = this.esAdmin || this.esPsicologo;
+  readonly puedeGestionarInvolucrados = this.esTutor;
+  readonly puedeSubirEvidencia = this.esTutor;
+  readonly puedeEliminarEvidencia = this.esAdmin || this.esTutor;
+  readonly puedeVerificarIntegridad = this.esAdmin || this.esPsicologo;
+  readonly puedeRegistrarSeguimiento = this.esPsicologo;
+  readonly puedeVerNotificaciones = this.esAdmin || this.esTutor;
 
-  // Involucrados: CU12 y backend (@PreAuthorize("hasRole('TUTOR')")) -> Exclusivo TUTOR
-  readonly columnasInvolucrados: string[] = this.esTutor
+  // Involucrados: Exclusivo TUTOR
+  readonly columnasInvolucrados: string[] = this.puedeGestionarInvolucrados
     ? ['rol', 'nombre', 'documento', 'observaciones', 'acciones']
     : ['rol', 'nombre', 'documento', 'observaciones'];
 
@@ -115,15 +148,13 @@ export class IncidenciaDetalle {
           switchMap((expediente) => {
             if (!expediente) return of(null);
 
-            return this.accionesApi
-              .listarPorIncidente(this.id)
-              .pipe(
-                map((seguimiento) => ({
-                  ...expediente,
-                  seguimiento,
-                })),
-                catchError(() => of(expediente)),
-              );
+            return this.accionesApi.listarPorIncidente(this.id).pipe(
+              map((seguimiento: AccionSeguimientoResponseDto[]) => ({
+                ...expediente,
+                seguimiento: seguimiento as any,
+              })),
+              catchError(() => of(expediente)),
+            );
           }),
           tap((expediente) => {
             if (expediente) this.estado.set('ok');
@@ -160,7 +191,7 @@ export class IncidenciaDetalle {
   // ---------- Involucrados (Solo Tutor) ----------
 
   agregarInvolucrado(): void {
-    if (!this.esTutor) return;
+    if (!this.puedeGestionarInvolucrados) return;
 
     this.dialog
       .open(InvolucradoDialog, { width: '520px' })
@@ -175,7 +206,7 @@ export class IncidenciaDetalle {
   }
 
   retirar(p: Involucrado): void {
-    if (!this.esTutor) return;
+    if (!this.puedeGestionarInvolucrados) return;
 
     this.dialog
       .open(MotivoDialog, {
@@ -199,7 +230,7 @@ export class IncidenciaDetalle {
   // ---------- Evidencias ----------
 
   subirEvidencia(): void {
-    if (!this.esTutor) return;
+    if (!this.puedeSubirEvidencia) return;
 
     this.dialog
       .open(EvidenciaDialog, { width: '520px' })
@@ -236,7 +267,7 @@ export class IncidenciaDetalle {
   }
 
   verificar(a: Adjunto): void {
-    if (!this.esAdmin && !this.esPsicologo) return;
+    if (!this.puedeVerificarIntegridad) return;
 
     this.api.verificarIntegridad(a.id).subscribe((r) =>
       this.snack.open(
@@ -250,7 +281,7 @@ export class IncidenciaDetalle {
   }
 
   eliminarEvidencia(a: Adjunto): void {
-    if (!this.esAdmin && !this.esTutor) return;
+    if (!this.puedeEliminarEvidencia) return;
 
     this.dialog
       .open(MotivoDialog, {
@@ -311,24 +342,30 @@ export class IncidenciaDetalle {
             tipo: 'fecha',
             requerido: false,
           },
+          {
+            nombre: 'fechaProximaRevision',
+            etiqueta: 'Fecha de próxima revisión',
+            tipo: 'fecha',
+            requerido: false,
+          },
         ],
       },
-      (v) =>
-        this.accionesApi
-          .registrar(this.id, {
-            tipoAccion: v.tipoAccion,
-            descripcion: v.descripcion,
-            fechaProgramada: v.fechaProgramada
-              ? new Date(v.fechaProgramada).toISOString()
-              : null,
-          })
-          .pipe(map(() => undefined)),
+      (v) => {
+        const requestDto: AccionSeguimientoRequestDto = {
+          tipoAccion: v.tipoAccion as TipoAccion,
+          descripcion: v.descripcion,
+          fechaProgramada: aOffsetDateTimeString(v.fechaProgramada),
+          fechaProximaRevision: aLocalDateString(v.fechaProximaRevision),
+        };
+
+        return this.accionesApi.registrar(this.id, requestDto).pipe(map(() => undefined));
+      },
       'Acción de seguimiento registrada',
     );
   }
 
-  // Actualizar estado de una acción (PENDIENTE -> EN_PROCESO -> COMPLETADA / CANCELADA)
-  actualizarEstadoAccion(accion: any): void {
+  // Actualizar estado de una acción (cumple AccionEstadoRequestDto)
+  actualizarEstadoAccion(accion: AccionSeguimientoResponseDto): void {
     if (!this.esPsicologo) return;
 
     this.abrir(
@@ -337,7 +374,7 @@ export class IncidenciaDetalle {
         confirmar: 'Guardar estado',
         campos: [
           {
-            nombre: 'estado',
+            nombre: 'nuevoEstado',
             etiqueta: 'Nuevo estado',
             tipo: 'select',
             requerido: true,
@@ -346,30 +383,30 @@ export class IncidenciaDetalle {
               { valor: 'PENDIENTE', texto: 'Pendiente' },
               { valor: 'EN_PROCESO', texto: 'En proceso' },
               { valor: 'COMPLETADA', texto: 'Completada' },
-              { valor: 'CANCELADA', texto: 'Cancelada' },
             ],
           },
           {
-            nombre: 'observaciones',
-            etiqueta: 'Observaciones de avance o cierre',
+            nombre: 'comentarioEjecucion',
+            etiqueta: 'Comentarios de ejecución o cierre',
             tipo: 'area',
             requerido: false,
           },
         ],
       },
-      (v) =>
-        (this.accionesApi as any)
-          .actualizarEstado(accion.id, {
-            estado: v.estado,
-            observaciones: v.observaciones || undefined,
-          })
-          .pipe(map(() => undefined)),
+      (v) => {
+        const dto: AccionEstadoRequestDto = {
+          nuevoEstado: v.nuevoEstado as EstadoAccion,
+          comentarioEjecucion: v.comentarioEjecucion?.trim() || undefined,
+        };
+
+        return this.accionesApi.actualizarEstado(accion.id, dto).pipe(map(() => undefined));
+      },
       'Estado de la acción actualizado',
     );
   }
 
-  // Reprogramar fecha de próxima revisión
-  reprogramarAccion(accion: any): void {
+  // Reprogramar fecha de próxima revisión (cumple AccionRevisionRequestDto)
+  reprogramarAccion(accion: AccionSeguimientoResponseDto): void {
     if (!this.esPsicologo) return;
 
     this.abrir(
@@ -378,26 +415,33 @@ export class IncidenciaDetalle {
         confirmar: 'Reprogramar',
         campos: [
           {
-            nombre: 'fechaProximaRevision',
+            nombre: 'nuevaFechaRevision',
             etiqueta: 'Nueva fecha de revisión',
             tipo: 'fecha',
             requerido: true,
           },
           {
-            nombre: 'motivo',
-            etiqueta: 'Motivo de la reprogramación',
+            nombre: 'justificacion',
+            etiqueta: 'Justificación de la postergación',
             tipo: 'area',
             requerido: true,
           },
         ],
       },
-      (v) =>
-        (this.accionesApi as any)
-          .reprogramar(accion.id, {
-            fechaProximaRevision: new Date(v.fechaProximaRevision).toISOString(),
-            motivo: v.motivo,
-          })
-          .pipe(map(() => undefined)),
+      (v) => {
+        const parsedFecha = aLocalDateString(v.nuevaFechaRevision);
+        if (!parsedFecha) {
+          throw new Error('La fecha seleccionada no es válida');
+        }
+
+        const dto: AccionRevisionRequestDto = {
+          nuevaFechaRevision: parsedFecha,
+          justificacion: v.justificacion,
+        };
+
+        // Llama al método exacto del servicio
+        return this.accionesApi.reprogramarRevision(accion.id, dto).pipe(map(() => undefined));
+      },
       'Próxima revisión reprogramada',
     );
   }
@@ -416,7 +460,15 @@ export class IncidenciaDetalle {
         filter(Boolean),
         switchMap(llamada),
       )
-      .subscribe(() => this.refrescar(ok));
+      .subscribe({
+        next: () => this.refrescar(ok),
+        error: (err) =>
+          this.snack.open(
+            err?.error?.error?.message ?? err?.message ?? 'Ocurrió un error al procesar la acción',
+            'Cerrar',
+            { duration: 5000 },
+          ),
+      });
   }
 
   cambiarEstado(): void {
