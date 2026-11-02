@@ -5,9 +5,10 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatIconModule } from '@angular/material/icon';
+
 import { UsuarioApi } from '../../../core/services/usuario-api';
+import { AlertService } from '../../../core/services/alert.service';
 import {
   RolResponseDto,
   UsuarioMantenimientoResponseDto,
@@ -34,7 +35,7 @@ export class UsuarioForm implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly api = inject(UsuarioApi);
   private readonly ref = inject(MatDialogRef<UsuarioForm>);
-  private readonly snack = inject(MatSnackBar);
+  private readonly alert = inject(AlertService);
 
   readonly datos = inject<UsuarioMantenimientoResponseDto | null>(MAT_DIALOG_DATA);
 
@@ -55,7 +56,7 @@ export class UsuarioForm implements OnInit {
   });
 
   constructor() {
-    // Si es edición, se bloquean los campos inmutables (DNI, Username)
+    // Si es edición, se bloquean los campos inmutables (DNI, Username, Password)
     if (this.datos) {
       this.form.get('dni')?.disable();
       this.form.get('username')?.disable();
@@ -64,16 +65,20 @@ export class UsuarioForm implements OnInit {
   }
 
   ngOnInit(): void {
-    // Cargamos el catálogo de roles
+    // Cargamos el catálogo de roles disponibles
     this.api.listarRoles().subscribe({
       next: (res) => this.roles.set(res.data),
-      error: () => this.snack.open('Error al cargar roles', 'Cerrar', { duration: 3000 }),
+      error: () => this.alert.error('No se pudo cargar el listado de roles institucionales.'),
     });
   }
 
   guardar(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      this.alert.aviso(
+        'Por favor completa correctamente todos los campos obligatorios.',
+        'Formulario incompleto'
+      );
       return;
     }
 
@@ -81,43 +86,82 @@ export class UsuarioForm implements OnInit {
     const val = this.form.getRawValue();
 
     if (this.datos) {
-      // Flujo de Actualización
+      // 1. Flujo de Actualización
       const dtoUpdate: UsuarioRequestDto = {
-        nombres: val.nombres,
-        apellidos: val.apellidos,
-        correo: val.correo,
-        telefono: val.telefono || null,
+        nombres: val.nombres.trim(),
+        apellidos: val.apellidos.trim(),
+        correo: val.correo.trim(),
+        telefono: val.telefono?.trim() || null,
         roleId: Number(val.roleId),
         activo: val.activo,
       };
 
       this.api.actualizarPerfil(this.datos.id, dtoUpdate).subscribe({
         next: () => {
-          this.snack.open('Usuario actualizado exitosamente', 'Cerrar', { duration: 3000 });
+          this.guardando.set(false);
+          this.alert.exito(
+            'Usuario actualizado',
+            `Los datos del usuario @${this.datos?.username} se guardaron exitosamente.`
+          );
           this.ref.close(true);
         },
-        error: () => this.guardando.set(false),
+        error: (err) => {
+          this.guardando.set(false);
+          const errorMsg =
+            err?.error?.message ??
+            err?.error?.mensaje ??
+            err?.message ??
+            'No se pudo actualizar el usuario.';
+          this.alert.error(errorMsg, 'Error al actualizar');
+        },
       });
     } else {
-      // Flujo de Registro Nuevo
+      // 2. Flujo de Registro Nuevo
       const dtoCreate: UsuarioRegistroRequestDto = {
-        nombres: val.nombres,
-        apellidos: val.apellidos,
-        dni: val.dni,
-        username: val.username,
+        nombres: val.nombres.trim(),
+        apellidos: val.apellidos.trim(),
+        dni: val.dni.trim(),
+        username: val.username.trim(),
         password: val.password,
-        correo: val.correo,
-        telefono: val.telefono || null,
+        correo: val.correo.trim(),
+        telefono: val.telefono?.trim() || null,
         roleId: Number(val.roleId),
       };
 
       this.api.registrarUsuario(dtoCreate).subscribe({
         next: () => {
-          this.snack.open('Usuario registrado exitosamente', 'Cerrar', { duration: 3000 });
+          this.guardando.set(false);
+          this.alert.exito(
+            'Usuario registrado',
+            `La cuenta institucional @${dtoCreate.username} fue creada con éxito.`
+          );
           this.ref.close(true);
         },
-        error: () => this.guardando.set(false),
+        error: (err) => {
+          this.guardando.set(false);
+          const errorMsg =
+            err?.error?.message ??
+            err?.error?.mensaje ??
+            err?.message ??
+            'No se pudo registrar al nuevo usuario.';
+          this.alert.error(errorMsg, 'Error al registrar');
+        },
       });
+    }
+  }
+
+  async cancelar(): Promise<void> {
+    if (this.form.dirty) {
+      const confirmar = await this.alert.confirmarPeligro(
+        '¿Deseas salir del formulario?',
+        'Hay información sin guardar que se perderá.',
+        'Sí, salir'
+      );
+      if (confirmar) {
+        this.ref.close(false);
+      }
+    } else {
+      this.ref.close(false);
     }
   }
 }

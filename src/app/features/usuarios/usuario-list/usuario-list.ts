@@ -9,10 +9,11 @@ import { MatInputModule } from '@angular/material/input';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTableModule } from '@angular/material/table';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
+
 import { Auth } from '../../../core/auth/auth';
 import { UsuarioApi } from '../../../core/services/usuario-api';
+import { AlertService } from '../../../core/services/alert.service';
 import {
   RolResponseDto,
   UsuarioFiltroRequestDto,
@@ -31,7 +32,6 @@ import { UsuarioForm } from '../usuario-form/usuario-form';
     MatSelectModule,
     MatButtonModule,
     MatIconModule,
-    MatSnackBarModule,
     MatTooltipModule,
   ],
   templateUrl: './usuario-list.html',
@@ -41,7 +41,7 @@ export class UsuarioList {
   private readonly api = inject(UsuarioApi);
   private readonly dialog = inject(MatDialog);
   private readonly auth = inject(Auth);
-  private readonly snack = inject(MatSnackBar);
+  private readonly alert = inject(AlertService);
 
   readonly columnas = ['usuario', 'dni', 'rol', 'contacto', 'estado', 'acciones'];
   readonly puedeEditar = this.auth.tieneRol(['ROLE_ADMINISTRADOR']);
@@ -74,7 +74,10 @@ export class UsuarioList {
             content: res.data ?? [],
             totalElements: res.meta?.totalElements ?? res.data?.length ?? 0,
           })),
-          catchError(() => of({ content: [], totalElements: 0 }))
+          catchError(() => {
+            this.alert.error('No se pudo cargar la lista de usuarios institucionales.');
+            return of({ content: [], totalElements: 0 });
+          })
         )
       )
     ),
@@ -96,28 +99,75 @@ export class UsuarioList {
       .subscribe((ok) => ok && this.recarga.update((n) => n + 1));
   }
 
-  restablecerPassword(usuario: UsuarioMantenimientoResponseDto): void {
-    if (!confirm(`¿Restablecer la contraseña de ${usuario.nombres} al formato predeterminado Minedu@{DNI}?`)) {
-      return;
-    }
+  async restablecerPassword(usuario: UsuarioMantenimientoResponseDto): Promise<void> {
+    const nombreCompleto = `${usuario.nombres} ${usuario.apellidos}`;
+
+    // Confirmación modal con AlertService
+    const confirmado = await this.alert.confirmar(
+      '¿Restablecer contraseña?',
+      `La contraseña de ${nombreCompleto} volverá al formato por defecto: Minedu@${usuario.dni}`,
+      'Sí, restablecer'
+    );
+
+    if (!confirmado) return;
 
     this.api.restablecerPassword(usuario.id).subscribe({
-      next: () => this.snack.open('Contraseña restablecida correctamente', 'Cerrar', { duration: 3000 }),
-      error: () => this.snack.open('Error al restablecer contraseña', 'Cerrar', { duration: 3000 }),
+      next: () => {
+        this.alert.exito(
+          'Contraseña restablecida',
+          `La contraseña para @${usuario.username} se restableció con éxito.`
+        );
+      },
+      error: (err) => {
+        const mensaje =
+          err?.error?.message ??
+          err?.error?.mensaje ??
+          err?.message ??
+          'Ocurrió un error al restablecer la contraseña.';
+        this.alert.error(mensaje, 'Error');
+      },
     });
   }
 
-  toggleEstado(usuario: UsuarioMantenimientoResponseDto): void {
+  async toggleEstado(usuario: UsuarioMantenimientoResponseDto): Promise<void> {
+    const nombreCompleto = `${usuario.nombres} ${usuario.apellidos}`;
+    const accion = usuario.activo ? 'desactivar' : 'reactivar';
+
+    // Si está activo, advertir que perderá el acceso de inmediato
+    const confirmado = usuario.activo
+      ? await this.alert.confirmarPeligro(
+          `¿Desactivar a ${nombreCompleto}?`,
+          'El usuario perderá el acceso al sistema inmediatamente.',
+          'Sí, desactivar'
+        )
+      : await this.alert.confirmar(
+          `¿Reactivar a ${nombreCompleto}?`,
+          'El usuario podrá volver a iniciar sesión con sus credenciales.',
+          'Sí, reactivar'
+        );
+
+    if (!confirmado) return;
+
     const accion$ = usuario.activo
       ? this.api.desactivarUsuario(usuario.id)
       : this.api.reactivarUsuario(usuario.id);
 
     accion$.subscribe({
       next: () => {
-        this.snack.open(`Usuario ${usuario.activo ? 'desactivado' : 'reactivado'}`, 'Cerrar', { duration: 2500 });
+        this.alert.exito(
+          usuario.activo ? 'Usuario desactivado' : 'Usuario reactivado',
+          `${nombreCompleto} fue ${usuario.activo ? 'desactivado' : 'reactivado'} correctamente.`
+        );
         this.recarga.update((n) => n + 1);
       },
-      error: () => this.snack.open('Error al cambiar estado del usuario', 'Cerrar', { duration: 3000 }),
+      error: (err) => {
+        const mensaje =
+          err?.error?.message ??
+          err?.error?.mensaje ??
+          err?.message ??
+          `No se pudo ${accion} al usuario.`;
+        this.alert.error(mensaje, 'Error al cambiar estado');
+      },
     });
   }
 }

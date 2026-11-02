@@ -1,66 +1,123 @@
 <div class="cab">
   <h2>Tipos de incidencia</h2>
   @if (puedeEditar) {
-  <button mat-flat-button (click)="abrirForm(null)"><mat-icon>add</mat-icon> Nuevo tipo</button>
+    <button mat-flat-button (click)="abrirForm(null)">
+      <mat-icon>add</mat-icon> Nuevo tipo
+    </button>
   }
 </div>
-<p class="ayuda">El tipo no define la gravedad: esta se registra aparte en cada incidencia. Desactivar un tipo no altera
-  el historial.</p>
 
+<p class="ayuda">
+  El tipo no define la gravedad: esta se evalúa de manera individual en cada caso reportado. Desactivar un tipo no altera el historial previo.
+</p>
+
+<!-- Filtros de búsqueda -->
 <div class="filtros">
   <mat-form-field appearance="outline">
-    <mat-label>Buscar</mat-label>
-    <input matInput (input)="texto.set($any($event.target).value)" />
+    <mat-label>Buscar por nombre o descripción</mat-label>
+    <input matInput [value]="texto()" (input)="cambiarTexto($any($event.target).value)" />
     <mat-icon matSuffix>search</mat-icon>
   </mat-form-field>
+
   <mat-form-field appearance="outline">
     <mat-label>Categoría SíSeVe</mat-label>
-    <mat-select value="" (selectionChange)="categoria.set($event.value)">
-      <mat-option value="">Todas</mat-option>
-      @for (c of categorias; track c) { <mat-option [value]="c">{{ c.replaceAll('_', ' ') }}</mat-option> }
+    <mat-select [value]="categoria()" (selectionChange)="cambiarCategoria($event.value)">
+      <mat-option value="">Todas las categorías</mat-option>
+      @for (c of categorias; track c) {
+        <mat-option [value]="c">{{ c.replaceAll('_', ' ') }}</mat-option>
+      }
     </mat-select>
   </mat-form-field>
 </div>
 
-<div class="tabla">
-  <table mat-table [dataSource]="filtrados()">
+<!-- Tabla paginada visualmente -->
+<div class="tabla mat-elevation-z1">
+  <table mat-table [dataSource]="paginados()">
+    <!-- Nombre -->
     <ng-container matColumnDef="nombre">
       <th mat-header-cell *matHeaderCellDef>Nombre</th>
-      <td mat-cell *matCellDef="let t">{{ t.nombre }}</td>
+      <td mat-cell *matCellDef="let t">
+        <strong>{{ t.nombre }}</strong>
+      </td>
     </ng-container>
+
+    <!-- Categoría SíSeVe -->
     <ng-container matColumnDef="categoria">
       <th mat-header-cell *matHeaderCellDef>Categoría SíSeVe</th>
-      <td mat-cell *matCellDef="let t"><span class="cat">{{ t.categoriaSiseve.replaceAll('_', ' ') }}</span></td>
+      <td mat-cell *matCellDef="let t">
+        <span class="cat">{{ t.categoriaSiseve.replaceAll('_', ' ') }}</span>
+      </td>
     </ng-container>
+
+    <!-- Gravedad Base -->
     <ng-container matColumnDef="gravedad">
       <th mat-header-cell *matHeaderCellDef>Gravedad base</th>
-      <td mat-cell *matCellDef="let t">@if (t.gravedadBase) { <app-gravedad-chip [valor]="t.gravedadBase" /> } @else { —
-        }</td>
-    </ng-container>
-    <ng-container matColumnDef="descripcion">
-      <th mat-header-cell *matHeaderCellDef>Descripción</th>
-      <td mat-cell *matCellDef="let t">{{ t.descripcion || '—' }}</td>
-    </ng-container>
-    <ng-container matColumnDef="estado">
-      <th mat-header-cell *matHeaderCellDef>Estado</th>
-      <td mat-cell *matCellDef="let t"><span class="est" [class.off]="!t.activo">{{ t.activo ? 'Activo' : 'Inactivo'
-          }}</span></td>
-    </ng-container>
-    <ng-container matColumnDef="acciones">
-      <th mat-header-cell *matHeaderCellDef></th>
       <td mat-cell *matCellDef="let t">
-        @if (puedeEditar) {
-        <button mat-icon-button title="Editar" (click)="abrirForm(t)"><mat-icon>edit</mat-icon></button>
-        <button mat-icon-button [title]="t.activo ? 'Desactivar' : 'Reactivar'" (click)="alternar(t)">
-          <mat-icon>{{ t.activo ? 'toggle_on' : 'toggle_off' }}</mat-icon>
-        </button>
+        @if (t.gravedadBase) {
+          <app-gravedad-chip [valor]="t.gravedadBase" />
+        } @else {
+          <span class="texto-secundario">—</span>
         }
       </td>
     </ng-container>
+
+    <!-- Descripción -->
+    <ng-container matColumnDef="descripcion">
+      <th mat-header-cell *matHeaderCellDef>Descripción</th>
+      <td mat-cell *matCellDef="let t">
+        {{ t.descripcion || '—' }}
+      </td>
+    </ng-container>
+
+    <!-- Estado -->
+    <ng-container matColumnDef="estado">
+      <th mat-header-cell *matHeaderCellDef>Estado</th>
+      <td mat-cell *matCellDef="let t">
+        <span class="est" [class.off]="!t.activo">
+          {{ t.activo ? 'Activo' : 'Inactivo' }}
+        </span>
+      </td>
+    </ng-container>
+
+    <!-- Acciones -->
+    <ng-container matColumnDef="acciones">
+      <th mat-header-cell *matHeaderCellDef></th>
+      <td mat-cell *matCellDef="let t" class="text-end">
+        @if (puedeEditar) {
+          <!-- Editar -->
+          <button mat-icon-button title="Editar tipo de incidencia" (click)="abrirForm(t)">
+            <mat-icon>edit</mat-icon>
+          </button>
+
+          <!-- Alternar Activo / Inactivo con SweetAlert2 -->
+          <button
+            mat-icon-button
+            [title]="t.activo ? 'Desactivar tipo' : 'Reactivar tipo'"
+            [color]="t.activo ? 'accent' : 'primary'"
+            (click)="alternar(t)"
+          >
+            <mat-icon>{{ t.activo ? 'toggle_on' : 'toggle_off' }}</mat-icon>
+          </button>
+        }
+      </td>
+    </ng-container>
+
     <tr mat-header-row *matHeaderRowDef="columnas"></tr>
     <tr mat-row *matRowDef="let fila; columns: columnas"></tr>
     <tr class="mat-row" *matNoDataRow>
-      <td class="vacio" [attr.colspan]="columnas.length">{{ datos() ? 'Sin resultados' : 'Cargando…' }}</td>
+      <td class="vacio" [attr.colspan]="columnas.length">
+        {{ datos() ? 'No se encontraron tipos de incidencia con los filtros seleccionados' : 'Cargando tipologías…' }}
+      </td>
     </tr>
   </table>
+
+  <!-- Paginador visual en el cliente -->
+  <mat-paginator
+    [length]="filtrados().length"
+    [pageSize]="tamanioPagina()"
+    [pageIndex]="pagina()"
+    [pageSizeOptions]="[5, 10, 20]"
+    (page)="paginar($event)"
+    showFirstLastButtons
+  />
 </div>

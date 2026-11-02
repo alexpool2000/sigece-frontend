@@ -1,72 +1,136 @@
-<a mat-button routerLink="/estudiantes"><mat-icon>arrow_back</mat-icon> Volver a estudiantes</a>
+<a mat-button routerLink="/estudiantes" class="btn-volver">
+  <mat-icon>arrow_back</mat-icon> Volver al padrón de estudiantes
+</a>
 
 @if (perfil(); as p) {
+<header class="cabecera">
+  <div class="identidad">
+    <h2>{{ p.estudiante.apellidos }}, {{ p.estudiante.nombres }}</h2>
+    <p class="subtitulo">Código SIAGIE: <strong>{{ p.estudiante.codigoSiagie }}</strong></p>
+  </div>
+  <span class="espacio"></span>
+  <span class="badge" [class.inactivo]="!p.estudiante.activo">
+    {{ p.estudiante.activo ? 'Activo' : 'Inactivo' }}
+  </span>
+</header>
+
+<!-- Tarjeta: Datos del Estudiante -->
 <mat-card class="card">
   <mat-card-header>
-    <mat-card-title>{{ p.estudiante.apellidos }}, {{ p.estudiante.nombres }}</mat-card-title>
-    <mat-card-subtitle>Código SIAGIE {{ p.estudiante.codigoSiagie }}</mat-card-subtitle>
+    <mat-card-title>Información Escolar</mat-card-title>
   </mat-card-header>
   <mat-card-content class="datos">
-    <div><span>Nivel</span>{{ p.estudiante.nivel }}</div>
-    <div><span>Grado y sección</span>{{ p.estudiante.grado }} · {{ p.estudiante.seccion }}</div>
-    <div><span>Fecha de nacimiento</span>{{ p.estudiante.fechaNacimiento | date: 'dd/MM/yyyy' }}</div>
-    <div><span>Estado</span>{{ p.estudiante.activo ? 'Activo' : 'Inactivo' }}</div>
-    <div><span>Incidentes históricos</span><strong>{{ p.totalIncidentesHistoricos }}</strong></div>
+    <div><span>Nivel:</span> <strong>{{ p.estudiante.nivel }}</strong></div>
+    <div><span>Grado y sección:</span> <strong>{{ p.estudiante.grado }} · "{{ p.estudiante.seccion }}"</strong></div>
+    <div><span>Fecha de nacimiento:</span> <strong>{{ p.estudiante.fechaNacimiento | date: 'dd/MM/yyyy' }}</strong></div>
+    <div><span>Estado actual:</span> <strong>{{ p.estudiante.activo ? 'Matriculado / Activo' : 'Inactivo' }}</strong></div>
+    <div>
+      <span>Incidentes históricos:</span>
+      <strong [class.alerta-incidente]="p.totalIncidentesHistoricos > 0">
+        {{ p.totalIncidentesHistoricos }} caso(s)
+      </strong>
+    </div>
   </mat-card-content>
 </mat-card>
 
+<!-- Tarjeta: Directorio de Apoderados -->
 <mat-card class="card">
   <mat-card-header class="cab">
-    <mat-card-title>Apoderados</mat-card-title>
-    @if (puedeEditar) { <button mat-flat-button (click)="asignar()"><mat-icon>person_add</mat-icon> Asignar
-      apoderado</button> }
+    <div class="titulos-seccion">
+      <mat-card-title>Apoderados y Contactos de Emergencia</mat-card-title>
+      <mat-card-subtitle>Personas autorizadas vinculadas al estudiante</mat-card-subtitle>
+    </div>
+    <span class="espacio"></span>
+    @if (puedeEditar) {
+      <button mat-flat-button (click)="asignar()">
+        <mat-icon>person_add</mat-icon> Asignar apoderado
+      </button>
+    }
   </mat-card-header>
+
   <mat-card-content>
     <div class="tabla">
       <table mat-table [dataSource]="p.apoderados">
+        <!-- Nombre del Apoderado -->
         <ng-container matColumnDef="nombre">
           <th mat-header-cell *matHeaderCellDef>Apoderado</th>
-          <td mat-cell *matCellDef="let v">{{ v.nombreApoderado }}</td>
+          <td mat-cell *matCellDef="let v">
+            <strong>{{ v.nombreApoderado }}</strong>
+          </td>
         </ng-container>
+
+        <!-- Documento -->
         <ng-container matColumnDef="documento">
           <th mat-header-cell *matHeaderCellDef>Documento</th>
           <td mat-cell *matCellDef="let v">{{ v.numeroDocumento }}</td>
         </ng-container>
+
+        <!-- Parentesco -->
         <ng-container matColumnDef="parentesco">
           <th mat-header-cell *matHeaderCellDef>Parentesco</th>
-          <td mat-cell *matCellDef="let v">{{ v.parentesco.replace('_', ' ') }}</td>
+          <td mat-cell *matCellDef="let v">
+            <span class="chip-parentesco">{{ v.parentesco.replaceAll('_', ' ') }}</span>
+          </td>
         </ng-container>
+
+        <!-- Contacto -->
         <ng-container matColumnDef="contacto">
           <th mat-header-cell *matHeaderCellDef>Contacto</th>
-          <td mat-cell *matCellDef="let v">{{ v.telefono }}@if (v.correo) { · {{ v.correo }} }</td>
-        </ng-container>
-        <ng-container matColumnDef="principal">
-          <th mat-header-cell *matHeaderCellDef>Principal</th>
-          <td mat-cell *matCellDef="let v">@if (v.esContactoPrincipal) { <mat-icon class="star"
-              title="Contacto principal">star</mat-icon> }</td>
-        </ng-container>
-        <ng-container matColumnDef="acciones">
-          <th mat-header-cell *matHeaderCellDef></th>
           <td mat-cell *matCellDef="let v">
-            @if (puedeEditar) {
-            @if (!v.esContactoPrincipal) {
-            <button mat-button (click)="hacerPrincipal(v)">Marcar como principal</button>
-            }
-            <button mat-icon-button title="Quitar apoderado" (click)="quitar(v)"><mat-icon>link_off</mat-icon></button>
+            <span>{{ v.telefono }}</span>
+            @if (v.correo) { 
+              <span class="correo-texto"> · {{ v.correo }}</span> 
             }
           </td>
         </ng-container>
+
+        <!-- Indicador Principal -->
+        <ng-container matColumnDef="principal">
+          <th mat-header-cell *matHeaderCellDef class="col-centro">Principal</th>
+          <td mat-cell *matCellDef="let v" class="col-centro">
+            @if (v.esContactoPrincipal) {
+              <span class="badge-principal" title="Contacto principal asignado">
+                <mat-icon class="star">star</mat-icon> Principal
+              </span>
+            } @else {
+              <span class="texto-secundario">—</span>
+            }
+          </td>
+        </ng-container>
+
+        <!-- Acciones -->
+        <ng-container matColumnDef="acciones">
+          <th mat-header-cell *matHeaderCellDef class="col-acciones">Acciones</th>
+          <td mat-cell *matCellDef="let v" class="col-acciones">
+            @if (puedeEditar) {
+              @if (!v.esContactoPrincipal) {
+                <button mat-stroked-button class="btn-principal" (click)="hacerPrincipal(v)" title="Marcar como contacto principal">
+                  <mat-icon>star_border</mat-icon> Hacer principal
+                </button>
+              }
+              <button mat-icon-button color="warn" title="Desvincular apoderado" (click)="quitar(v)">
+                <mat-icon>link_off</mat-icon>
+              </button>
+            }
+          </td>
+        </ng-container>
+
         <tr mat-header-row *matHeaderRowDef="columnas"></tr>
         <tr mat-row *matRowDef="let fila; columns: columnas"></tr>
         <tr class="mat-row" *matNoDataRow>
-          <td class="vacio" [attr.colspan]="columnas.length">Sin apoderados asignados</td>
+          <td class="vacio" [attr.colspan]="columnas.length">
+            Este estudiante aún no tiene apoderados asignados.
+          </td>
         </tr>
       </table>
     </div>
   </mat-card-content>
 </mat-card>
 } @else if (error()) {
-<p>No se pudo cargar el estudiante.</p>
+<div class="mensaje-error">
+  <mat-icon color="warn">error</mat-icon>
+  <p>No se pudo cargar la ficha del estudiante. Verifica que exista y tengas permisos.</p>
+</div>
 } @else {
-<p>Cargando…</p>
+<p class="vacio">Cargando ficha del estudiante…</p>
 }

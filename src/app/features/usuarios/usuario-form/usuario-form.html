@@ -2,52 +2,83 @@
 
 <mat-dialog-content>
   <form [formGroup]="form" class="grid">
+    <!-- Nombres -->
     <mat-form-field appearance="outline">
       <mat-label>Nombres</mat-label>
       <input matInput formControlName="nombres" />
-      <mat-error>Los nombres son requeridos</mat-error>
+      @if (form.controls.nombres.hasError('required') && form.controls.nombres.touched) {
+        <mat-error>Los nombres son requeridos</mat-error>
+      }
     </mat-form-field>
 
+    <!-- Apellidos -->
     <mat-form-field appearance="outline">
       <mat-label>Apellidos</mat-label>
       <input matInput formControlName="apellidos" />
-      <mat-error>Los apellidos son requeridos</mat-error>
+      @if (form.controls.apellidos.hasError('required') && form.controls.apellidos.touched) {
+        <mat-error>Los apellidos son requeridos</mat-error>
+      }
     </mat-form-field>
 
+    <!-- DNI -->
     <mat-form-field appearance="outline">
-      <mat-label>DNI</mat-label>
+      <mat-label>DNI / Documento</mat-label>
       <input matInput formControlName="dni" maxlength="15" />
-      <mat-error>DNI válido de 8 a 15 dígitos</mat-error>
+      @if (form.controls.dni.hasError('required') && form.controls.dni.touched) {
+        <mat-error>El DNI es obligatorio</mat-error>
+      } @else if (form.controls.dni.hasError('pattern')) {
+        <mat-error>DNI válido de 8 a 15 dígitos numéricos</mat-error>
+      }
     </mat-form-field>
 
+    <!-- Nombre de usuario -->
     <mat-form-field appearance="outline">
       <mat-label>Nombre de usuario</mat-label>
       <input matInput formControlName="username" />
-      <mat-error>El usuario es requerido</mat-error>
+      @if (form.controls.username.hasError('required') && form.controls.username.touched) {
+        <mat-error>El usuario es requerido</mat-error>
+      }
     </mat-form-field>
 
+    <!-- Contraseña inicial (Solo al crear) -->
     @if (!datos) {
       <mat-form-field appearance="outline">
         <mat-label>Contraseña inicial</mat-label>
-        <input matInput [type]="ocultarPassword() ? 'password' : 'text'" formControlName="password" />
+        <input 
+          matInput 
+          [type]="ocultarPassword() ? 'password' : 'text'" 
+          formControlName="password" 
+          placeholder="Mínimo 8 caracteres"
+        />
         <button mat-icon-button matSuffix type="button" (click)="ocultarPassword.set(!ocultarPassword())">
           <mat-icon>{{ ocultarPassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
         </button>
-        <mat-error>Mínimo 8 caracteres</mat-error>
+        @if (form.controls.password.hasError('required') && form.controls.password.touched) {
+          <mat-error>La contraseña es requerida</mat-error>
+        } @else if (form.controls.password.hasError('minlength')) {
+          <mat-error>Mínimo 8 caracteres</mat-error>
+        }
       </mat-form-field>
     }
 
+    <!-- Correo institucional -->
     <mat-form-field appearance="outline">
       <mat-label>Correo electrónico</mat-label>
-      <input matInput type="email" formControlName="correo" />
-      <mat-error>Correo institucional no válido</mat-error>
+      <input matInput type="email" formControlName="correo" placeholder="ejemplo@minedu.gob.pe" />
+      @if (form.controls.correo.hasError('required') && form.controls.correo.touched) {
+        <mat-error>El correo es obligatorio</mat-error>
+      } @else if (form.controls.correo.hasError('email')) {
+        <mat-error>Formato de correo no válido</mat-error>
+      }
     </mat-form-field>
 
+    <!-- Teléfono -->
     <mat-form-field appearance="outline">
       <mat-label>Teléfono (opcional)</mat-label>
-      <input matInput formControlName="telefono" />
+      <input matInput formControlName="telefono" placeholder="Ej. 987654321" />
     </mat-form-field>
 
+    <!-- Rol institucional -->
     <mat-form-field appearance="outline">
       <mat-label>Rol institucional</mat-label>
       <mat-select formControlName="roleId">
@@ -55,9 +86,12 @@
           <mat-option [value]="r.id">{{ r.nombre }}</mat-option>
         }
       </mat-select>
-      <mat-error>Debe seleccionar un rol</mat-error>
+      @if (form.controls.roleId.hasError('required') && form.controls.roleId.touched) {
+        <mat-error>Debe seleccionar un rol</mat-error>
+      }
     </mat-form-field>
 
+    <!-- Estado de la cuenta (Solo en edición) -->
     @if (datos) {
       <mat-form-field appearance="outline">
         <mat-label>Estado de la cuenta</mat-label>
@@ -70,12 +104,14 @@
   </form>
 
   @if (datos) {
-    <p class="nota">El DNI y nombre de usuario no pueden ser modificados una vez registrados.</p>
+    <p class="nota">
+      * Por motivos de auditoría institucional, el DNI y el nombre de usuario no pueden ser modificados.
+    </p>
   }
 </mat-dialog-content>
 
 <mat-dialog-actions align="end">
-  <button mat-button mat-dialog-close>Cancelar</button>
+  <button mat-button type="button" (click)="cancelar()">Cancelar</button>
   <button mat-flat-button color="primary" (click)="guardar()" [disabled]="guardando()">
     {{ guardando() ? 'Guardando…' : 'Guardar' }}
   </button>

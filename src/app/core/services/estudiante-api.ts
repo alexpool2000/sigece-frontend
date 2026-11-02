@@ -38,4 +38,8 @@ export class EstudianteApi {
   actualizar(id: number, dto: EstudianteRequest) { return this.http.put<ApiResponse<Estudiante>>(`${this.base}/${id}`, dto).pipe(map(r => r.data)); }
   desactivar(id: number) { return this.http.patch<ApiResponse<unknown>>(`${this.base}/${id}/desactivar`, {}); }
   reactivar(id: number) { return this.http.patch<ApiResponse<unknown>>(`${this.base}/${id}/reactivar`, {}); }
+  
+  eliminar(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.base}/${id}`);
+  }
 }

@@ -132,4 +132,36 @@ export class EstudianteList {
       },
     });
   }
+
+  // NUEVO MÉTODO: Eliminación física/lógica definitiva con SweetAlert2
+  async eliminar(e: Estudiante): Promise<void> {
+    const nombreCompleto = `${e.nombres} ${e.apellidos}`;
+
+    const confirmado = await this.alert.confirmarPeligro(
+      `¿Deseas eliminar a ${nombreCompleto}?`,
+      'El estudiante será retirado del padrón institucional. Esta acción no se puede deshacer.',
+      'Sí, eliminar'
+    );
+
+    if (!confirmado) return;
+
+    this.api.eliminar(e.id).subscribe({
+      next: () => {
+        this.alert.exito(
+          'Estudiante eliminado',
+          `${nombreCompleto} fue eliminado del padrón correctamente.`
+        );
+        this.recarga.update((n) => n + 1);
+      },
+      error: (err) => {
+        const errorMsg =
+          err?.error?.message ??
+          err?.error?.mensaje ??
+          err?.message ??
+          'No se pudo eliminar al estudiante.';
+
+        this.alert.error(errorMsg, 'Error al eliminar');
+      },
+    });
+  }
 }

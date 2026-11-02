@@ -1,74 +1,123 @@
 <div class="cab">
-  @if (soloSusAulas) { <p class="ayuda">Solo se muestran los estudiantes de sus grados o secciones.</p> }
-  <h2>Estudiantes</h2>
+  <h2>Padrón de Estudiantes</h2>
   @if (puedeEditar) {
-  <button mat-flat-button (click)="abrirForm(null)"><mat-icon>add</mat-icon> Nuevo estudiante</button>
+    <button mat-flat-button (click)="abrirForm(null)">
+      <mat-icon>person_add</mat-icon>
+      Nuevo estudiante
+    </button>
   }
 </div>
 
+<!-- Filtros de búsqueda -->
 <div class="filtros">
   <mat-form-field appearance="outline" class="buscar">
-    <mat-label>Buscar por nombre o código SIAGIE</mat-label>
-    <input matInput (input)="cambiar({ termino: $any($event.target).value })" />
+    <mat-label>Buscar por código SIAGIE, nombres o apellidos</mat-label>
+    <input matInput [value]="filtro().termino" (input)="cambiar({ termino: $any($event.target).value })" />
     <mat-icon matSuffix>search</mat-icon>
   </mat-form-field>
-  <mat-form-field appearance="outline">
+
+  <mat-form-field appearance="outline" class="select-filtro">
     <mat-label>Nivel</mat-label>
-    <mat-select value="" (selectionChange)="cambiar({ nivel: $event.value })">
-      <mat-option value="">Todos</mat-option>
-      @for (n of niveles; track n) { <mat-option [value]="n">{{ n }}</mat-option> }
-    </mat-select>
-  </mat-form-field>
-  <mat-form-field appearance="outline">
-    <mat-label>Estado</mat-label>
-    <mat-select [value]="true" (selectionChange)="cambiar({ activo: $event.value })">
-      <mat-option [value]="true">Activos</mat-option>
-      <mat-option [value]="false">Inactivos</mat-option>
-      <mat-option value="">Todos</mat-option>
+    <mat-select [value]="filtro().nivel" (selectionChange)="cambiar({ nivel: $event.value })">
+      <mat-option value="">Todos los niveles</mat-option>
+      @for (n of niveles; track n) {
+        <mat-option [value]="n">{{ n }}</mat-option>
+      }
     </mat-select>
   </mat-form-field>
 </div>
 
+<!-- Tabla de estudiantes -->
 <div class="tabla">
   <table mat-table [dataSource]="resultado()?.content ?? []">
+    
+    <!-- Código SIAGIE -->
     <ng-container matColumnDef="codigo">
       <th mat-header-cell *matHeaderCellDef>Código SIAGIE</th>
-      <td mat-cell *matCellDef="let e">{{ e.codigoSiagie }}</td>
+      <td mat-cell *matCellDef="let e">
+        <strong>{{ e.codigoSiagie }}</strong>
+      </td>
     </ng-container>
+
+    <!-- Nombres y Apellidos -->
     <ng-container matColumnDef="nombre">
       <th mat-header-cell *matHeaderCellDef>Estudiante</th>
-      <td mat-cell *matCellDef="let e">{{ e.apellidos }}, {{ e.nombres }}</td>
+      <td mat-cell *matCellDef="let e">
+        {{ e.apellidos }}, {{ e.nombres }}
+      </td>
     </ng-container>
+
+    <!-- Nivel, Grado y Sección -->
     <ng-container matColumnDef="nivel">
-      <th mat-header-cell *matHeaderCellDef>Nivel / Grado / Sección</th>
-      <td mat-cell *matCellDef="let e">{{ e.nivel }} · {{ e.grado }} · {{ e.seccion }}</td>
+      <th mat-header-cell *matHeaderCellDef>Nivel / Aula</th>
+      <td mat-cell *matCellDef="let e">
+        {{ e.nivel }} · {{ e.grado }} "{{ e.seccion }}"
+      </td>
     </ng-container>
+
+    <!-- Estado -->
     <ng-container matColumnDef="estado">
       <th mat-header-cell *matHeaderCellDef>Estado</th>
-      <td mat-cell *matCellDef="let e"><span class="est" [class.off]="!e.activo">{{ e.activo ? 'Activo' : 'Inactivo'
-          }}</span></td>
+      <td mat-cell *matCellDef="let e">
+        <span class="badge" [class.inactivo]="!e.activo">
+          {{ e.activo ? 'Activo' : 'Inactivo' }}
+        </span>
+      </td>
     </ng-container>
+
+    <!-- Acciones (Ver ficha, Editar, Desactivar y Eliminar) -->
     <ng-container matColumnDef="acciones">
       <th mat-header-cell *matHeaderCellDef></th>
       <td mat-cell *matCellDef="let e">
-        <button mat-icon-button title="Ver perfil" [routerLink]="['/estudiantes', e.id]">
+        <!-- Ver Ficha -->
+        <a mat-icon-button [routerLink]="['/estudiantes', e.id]" title="Ver ficha del estudiante">
           <mat-icon>visibility</mat-icon>
-        </button>
+        </a>
+
         @if (puedeEditar) {
-        <button mat-icon-button title="Editar" (click)="abrirForm(e)"><mat-icon>edit</mat-icon></button>
-        <button mat-icon-button [title]="e.activo ? 'Desactivar' : 'Reactivar'" (click)="alternar(e)">
-          <mat-icon>{{ e.activo ? 'person_off' : 'person_check' }}</mat-icon>
-        </button>
+          <!-- Editar -->
+          <button mat-icon-button title="Editar datos" (click)="abrirForm(e)">
+            <mat-icon>edit</mat-icon>
+          </button>
+
+          <!-- Alternar Activo / Inactivo -->
+          <button 
+            mat-icon-button 
+            (click)="alternar(e)" 
+            [title]="e.activo ? 'Desactivar estudiante' : 'Reactivar estudiante'"
+          >
+            <mat-icon [color]="e.activo ? 'accent' : 'primary'">
+              {{ e.activo ? 'block' : 'check_circle' }}
+            </mat-icon>
+          </button>
+
+          <!-- ELIMINAR ESTUDIANTE -->
+          <button 
+            mat-icon-button 
+            color="warn" 
+            title="Eliminar estudiante" 
+            (click)="eliminar(e)"
+          >
+            <mat-icon>delete</mat-icon>
+          </button>
         }
       </td>
     </ng-container>
+
     <tr mat-header-row *matHeaderRowDef="columnas"></tr>
     <tr mat-row *matRowDef="let fila; columns: columnas"></tr>
     <tr class="mat-row" *matNoDataRow>
-      <td class="vacio" [attr.colspan]="columnas.length">{{ resultado() ? 'Sin resultados' : 'Cargando…' }}</td>
+      <td class="vacio" [attr.colspan]="columnas.length">
+        {{ resultado() ? 'No se encontraron estudiantes' : 'Cargando padrón…' }}
+      </td>
     </tr>
   </table>
 </div>
 
-<mat-paginator [length]="resultado()?.totalElements ?? 0" [pageSize]="filtro().size" [pageIndex]="filtro().page"
-  [pageSizeOptions]="[5, 10, 25]" (page)="paginar($event)" />
+<mat-paginator
+  [length]="resultado()?.totalElements ?? 0"
+  [pageSize]="filtro().size"
+  [pageIndex]="filtro().page"
+  [pageSizeOptions]="[5, 10, 25]"
+  (page)="paginar($event)"
+/>
