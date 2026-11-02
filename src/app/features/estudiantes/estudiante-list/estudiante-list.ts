@@ -9,57 +9,127 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { MatSelectModule } from '@angular/material/select';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
+
 import { Auth } from '../../../core/auth/auth';
 import { NIVELES } from '../../../core/models/enums';
 import { Estudiante, EstudianteFiltro } from '../../../core/models/estudiante.models';
 import { EstudianteApi } from '../../../core/services/estudiante-api';
+import { AlertService } from '../../../core/services/alert.service';
 import { EstudianteForm } from '../estudiante-form/estudiante-form';
 
 @Component({
   selector: 'app-estudiante-list',
-  imports: [MatTableModule, MatPaginatorModule, MatFormFieldModule, MatInputModule, MatSelectModule, MatButtonModule, MatIconModule, RouterLink],
+  standalone: true,
+  imports: [
+    MatTableModule,
+    MatPaginatorModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatSelectModule,
+    MatButtonModule,
+    MatIconModule,
+    RouterLink,
+  ],
   templateUrl: './estudiante-list.html',
   styleUrl: './estudiante-list.css',
 })
 export class EstudianteList {
-  private api = inject(EstudianteApi);
-  private dialog = inject(MatDialog);
-  private snack = inject(MatSnackBar);
-  private auth = inject(Auth);
+  private readonly api = inject(EstudianteApi);
+  private readonly dialog = inject(MatDialog);
+  private readonly auth = inject(Auth);
+  private readonly alert = inject(AlertService);
 
   readonly niveles = NIVELES;
   readonly columnas = ['codigo', 'nombre', 'nivel', 'estado', 'acciones'];
-  // Matriz: Comité solo lectura en UC-04
+
+  // Control de permisos según roles (UC-04 / UC-05)
   readonly puedeEditar = this.auth.tieneRol(['ROLE_ADMINISTRADOR']);
   readonly soloSusAulas = this.auth.tieneRol(['ROLE_TUTOR']);
 
-  filtro = signal<EstudianteFiltro>({ termino: '', nivel: '', grado: '', seccion: '', activo: true, page: 0, size: 10 });
+  filtro = signal<EstudianteFiltro>({
+    termino: '',
+    nivel: '',
+    grado: '',
+    seccion: '',
+    activo: true,
+    page: 0,
+    size: 10,
+  });
+
   private recarga = signal(0);
 
   resultado = toSignal(
     combineLatest([toObservable(this.filtro), toObservable(this.recarga)]).pipe(
-      switchMap(([f]) => this.api.buscar(f).pipe(catchError(() => of({ content: [], totalElements: 0 })))),
+      switchMap(([f]) =>
+        this.api.buscar(f).pipe(
+          catchError(() => {
+            this.alert.error('No se pudo cargar la lista de estudiantes.');
+            return of({ content: [], totalElements: 0 });
+          })
+        )
+      )
     ),
-    { initialValue: null },
+    { initialValue: null }
   );
 
-  cambiar(parcial: Partial<EstudianteFiltro>) { this.filtro.update(f => ({ ...f, ...parcial, page: 0 })); }
-  paginar(e: PageEvent) { this.filtro.update(f => ({ ...f, page: e.pageIndex, size: e.pageSize })); }
-
-  abrirForm(est: Estudiante | null) {
-    this.dialog.open(EstudianteForm, { width: '560px', data: est })
-      .afterClosed().subscribe(ok => ok && this.recarga.update(n => n + 1));
+  cambiar(parcial: Partial<EstudianteFiltro>): void {
+    this.filtro.update((f) => ({ ...f, ...parcial, page: 0 }));
   }
 
-  alternar(e: Estudiante) {
+  paginar(e: PageEvent): void {
+    this.filtro.update((f) => ({ ...f, page: e.pageIndex, size: e.pageSize }));
+  }
+
+  abrirForm(est: Estudiante | null): void {
+    this.dialog
+      .open(EstudianteForm, { width: '560px', data: est })
+      .afterClosed()
+      .subscribe((ok) => {
+        if (ok) {
+          this.recarga.update((n) => n + 1);
+        }
+      });
+  }
+
+  async alternar(e: Estudiante): Promise<void> {
     const accion = e.activo ? 'desactivar' : 'reactivar';
-    if (!confirm(`¿Desea ${accion} a ${e.nombres} ${e.apellidos}?`)) return;
+    const nombreCompleto = `${e.nombres} ${e.apellidos}`;
+
+    // Confirmación modal con AlertService (SweetAlert2)
+    const confirmado = e.activo
+      ? await this.alert.confirmarPeligro(
+          `¿Deseas desactivar a ${nombreCompleto}?`,
+          'El estudiante quedará inactivo en el padrón escolar.',
+          'Sí, desactivar'
+        )
+      : await this.alert.confirmar(
+          `¿Deseas reactivar a ${nombreCompleto}?`,
+          'El estudiante volverá a figurar activo en el padrón.',
+          'Sí, reactivar'
+        );
+
+    if (!confirmado) return;
+
     const req$ = e.activo ? this.api.desactivar(e.id) : this.api.reactivar(e.id);
-    req$.subscribe(() => {
-      this.snack.open(e.activo ? 'Estudiante desactivado' : 'Estudiante reactivado', 'Cerrar', { duration: 3000 });
-      this.recarga.update(n => n + 1);
+
+    req$.subscribe({
+      next: () => {
+        this.alert.exito(
+          e.activo ? 'Estudiante desactivado' : 'Estudiante reactivado',
+          `${nombreCompleto} fue ${e.activo ? 'desactivado' : 'reactivado'} correctamente.`
+        );
+        this.recarga.update((n) => n + 1);
+      },
+      error: (err) => {
+        const errorMsg =
+          err?.error?.message ??
+          err?.error?.mensaje ??
+          err?.message ??
+          `No se pudo ${accion} al estudiante.`;
+
+        this.alert.error(errorMsg, 'Error al actualizar estado');
+      },
     });
   }
 }
