@@ -6,7 +6,6 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
 import { MatTabsModule } from '@angular/material/tabs';
 import {
@@ -27,6 +26,7 @@ import {
 } from '../../../core/models/incidente.models';
 import { IncidenteApi } from '../../../core/services/incidente-api';
 import { AccionSeguimientoApi } from '../../../core/services/accion-seguimiento-api';
+import { AlertService } from '../../../core/services/alert.service';
 
 import {
   AccionEstadoRequestDto,
@@ -88,8 +88,8 @@ export class IncidenciaDetalle {
   private readonly api = inject(IncidenteApi);
   private readonly accionesApi = inject(AccionSeguimientoApi);
   private readonly dialog = inject(MatDialog);
-  private readonly snack = inject(MatSnackBar);
   private readonly auth = inject(Auth);
+  private readonly alert = inject(AlertService);
 
   private readonly id = this.route.snapshot.paramMap.get('id')!;
   private readonly recarga = signal(0);
@@ -99,7 +99,7 @@ export class IncidenciaDetalle {
   readonly esTutor = this.auth.tieneRol(['ROLE_TUTOR']);
   readonly esPsicologo = this.auth.tieneRol(['ROLE_PSICOLOGO']);
 
-  // Permisos según Contratos Backend y CU
+  // Permisos según Contratos Backend y Casos de Uso
   readonly puedeModificarIncidente = this.esAdmin || this.esPsicologo;
   readonly puedeGestionarInvolucrados = this.esTutor;
   readonly puedeSubirEvidencia = this.esTutor;
@@ -183,12 +183,14 @@ export class IncidenciaDetalle {
     { initialValue: [] },
   );
 
-  private refrescar(mensaje: string): void {
-    this.snack.open(mensaje, 'Cerrar', { duration: 3000 });
+  private refrescar(mensaje: string, detalle = ''): void {
+    this.alert.exito(mensaje, detalle);
     this.recarga.update((n) => n + 1);
   }
 
-  // ---------- Involucrados (Solo Tutor) ----------
+  // =========================================================================
+  // 1. INVOLUCRADOS (Solo Tutor)
+  // =========================================================================
 
   agregarInvolucrado(): void {
     if (!this.puedeGestionarInvolucrados) return;
@@ -202,11 +204,22 @@ export class IncidenciaDetalle {
           this.api.agregarInvolucrado(this.id, r.dto, r.nombre),
         ),
       )
-      .subscribe(() => this.refrescar('Involucrado agregado'));
+      .subscribe({
+        next: () => this.refrescar('Involucrado agregado', 'Se agregó correctamente al expediente.'),
+        error: (err) => this.alert.error(err?.error?.message ?? err?.message ?? 'No se pudo registrar al involucrado'),
+      });
   }
 
-  retirar(p: Involucrado): void {
+  async retirar(p: Involucrado): Promise<void> {
     if (!this.puedeGestionarInvolucrados) return;
+
+    const confirmado = await this.alert.confirmarPeligro(
+      `¿Retirar a ${p.nombreCompleto}?`,
+      'Esta acción desvinculará a la persona del expediente del caso.',
+      'Sí, continuar con el retiro'
+    );
+
+    if (!confirmado) return;
 
     this.dialog
       .open(MotivoDialog, {
@@ -224,10 +237,15 @@ export class IncidenciaDetalle {
           this.api.retirarInvolucrado(this.id, p.id, motivo),
         ),
       )
-      .subscribe(() => this.refrescar('Involucrado retirado'));
+      .subscribe({
+        next: () => this.refrescar('Involucrado retirado', `${p.nombreCompleto} fue retirado del caso.`),
+        error: (err) => this.alert.error(err?.error?.message ?? err?.message ?? 'No se pudo retirar al involucrado'),
+      });
   }
 
-  // ---------- Evidencias ----------
+  // =========================================================================
+  // 2. EVIDENCIAS
+  // =========================================================================
 
   subirEvidencia(): void {
     if (!this.puedeSubirEvidencia) return;
@@ -242,14 +260,11 @@ export class IncidenciaDetalle {
         ),
       )
       .subscribe({
-        next: () => this.refrescar('Evidencia subida'),
+        next: () => this.refrescar('Evidencia cargada', 'El archivo fue almacenado de manera segura.'),
         error: (e) =>
-          this.snack.open(
-            e?.error?.error?.message ??
-            e?.message ??
-            'No se pudo subir la evidencia',
-            'Cerrar',
-            { duration: 5000 },
+          this.alert.error(
+            e?.error?.error?.message ?? e?.error?.message ?? e?.message ?? 'No se pudo subir la evidencia',
+            'Error al cargar archivo'
           ),
       });
   }
@@ -258,30 +273,41 @@ export class IncidenciaDetalle {
     this.api.urlDescarga(a.id).subscribe({
       next: (url) => window.open(url, '_blank'),
       error: (e) =>
-        this.snack.open(
-          e?.message ?? 'No se pudo generar la descarga',
-          'Cerrar',
-          { duration: 4000 },
-        ),
+        this.alert.error(e?.message ?? 'No se pudo generar el enlace de descarga.', 'Error de descarga'),
     });
   }
 
   verificar(a: Adjunto): void {
     if (!this.puedeVerificarIntegridad) return;
 
-    this.api.verificarIntegridad(a.id).subscribe((r) =>
-      this.snack.open(
-        r.integro
-          ? 'El archivo coincide con su hash SHA-256'
-          : 'El archivo no coincide con su hash registrado',
-        'Cerrar',
-        { duration: 6000 },
-      ),
-    );
+    this.api.verificarIntegridad(a.id).subscribe({
+      next: (r) => {
+        if (r.integro) {
+          this.alert.exito(
+            'Evidencia íntegra (SHA-256)',
+            `El archivo "${a.nombreOriginal}" coincide exactamente con su firma criptográfica registrada.`
+          );
+        } else {
+          this.alert.error(
+            `El archivo "${a.nombreOriginal}" difiere de su hash original. Podría haber sido alterado.`,
+            '¡Alerta de Integridad!'
+          );
+        }
+      },
+      error: () => this.alert.error('No se pudo verificar la integridad criptográfica de la evidencia.'),
+    });
   }
 
-  eliminarEvidencia(a: Adjunto): void {
+  async eliminarEvidencia(a: Adjunto): Promise<void> {
     if (!this.puedeEliminarEvidencia) return;
+
+    const confirmado = await this.alert.confirmarPeligro(
+      `¿Eliminar evidencia "${a.nombreOriginal}"?`,
+      'El archivo será retirado del expediente y del almacenamiento permanente.',
+      'Sí, eliminar evidencia'
+    );
+
+    if (!confirmado) return;
 
     this.dialog
       .open(MotivoDialog, {
@@ -299,10 +325,15 @@ export class IncidenciaDetalle {
           this.api.eliminarEvidencia(this.id, a.id, motivo),
         ),
       )
-      .subscribe(() => this.refrescar('Evidencia eliminada'));
+      .subscribe({
+        next: () => this.refrescar('Evidencia eliminada', 'El archivo fue eliminado del expediente.'),
+        error: (err) => this.alert.error(err?.error?.message ?? err?.message ?? 'No se pudo eliminar la evidencia'),
+      });
   }
 
-  // ---------- Seguimiento (CU15 - Exclusivo PSICÓLOGO) ----------
+  // =========================================================================
+  // 3. SEGUIMIENTO (CU15 - Exclusivo PSICÓLOGO)
+  // =========================================================================
 
   registrarAccionSeguimiento(): void {
     if (!this.esPsicologo) return;
@@ -360,11 +391,11 @@ export class IncidenciaDetalle {
 
         return this.accionesApi.registrar(this.id, requestDto).pipe(map(() => undefined));
       },
-      'Acción de seguimiento registrada',
+      'Acción registrada',
+      'La acción de seguimiento se guardó en el expediente.',
     );
   }
 
-  // Actualizar estado de una acción (cumple AccionEstadoRequestDto)
   actualizarEstadoAccion(accion: AccionSeguimientoResponseDto): void {
     if (!this.esPsicologo) return;
 
@@ -401,11 +432,11 @@ export class IncidenciaDetalle {
 
         return this.accionesApi.actualizarEstado(accion.id, dto).pipe(map(() => undefined));
       },
-      'Estado de la acción actualizado',
+      'Estado actualizado',
+      'El estado de la acción fue modificado.',
     );
   }
 
-  // Reprogramar fecha de próxima revisión (cumple AccionRevisionRequestDto)
   reprogramarAccion(accion: AccionSeguimientoResponseDto): void {
     if (!this.esPsicologo) return;
 
@@ -439,19 +470,22 @@ export class IncidenciaDetalle {
           justificacion: v.justificacion,
         };
 
-        // Llama al método exacto del servicio
         return this.accionesApi.reprogramarRevision(accion.id, dto).pipe(map(() => undefined));
       },
-      'Próxima revisión reprogramada',
+      'Revisión reprogramada',
+      'Se actualizó la fecha de seguimiento.',
     );
   }
 
-  // ---------- Acciones sobre el caso ----------
+  // =========================================================================
+  // 4. ACCIONES SOBRE EL EXPEDIENTE DEL CASO
+  // =========================================================================
 
   private abrir(
     data: AccionData,
     llamada: (v: any) => Observable<void>,
-    ok: string,
+    tituloExito: string,
+    detalleExito = '',
   ): void {
     this.dialog
       .open(AccionDialog, { data, width: '520px' })
@@ -461,12 +495,11 @@ export class IncidenciaDetalle {
         switchMap(llamada),
       )
       .subscribe({
-        next: () => this.refrescar(ok),
+        next: () => this.refrescar(tituloExito, detalleExito),
         error: (err) =>
-          this.snack.open(
-            err?.error?.error?.message ?? err?.message ?? 'Ocurrió un error al procesar la acción',
-            'Cerrar',
-            { duration: 5000 },
+          this.alert.error(
+            err?.error?.error?.message ?? err?.error?.message ?? err?.message ?? 'Ocurrió un error al procesar la acción',
+            'No se pudo completar la operación'
           ),
       });
   }
@@ -489,7 +522,7 @@ export class IncidenciaDetalle {
           },
           {
             nombre: 'motivo',
-            etiqueta: 'Motivo',
+            etiqueta: 'Motivo del cambio de estado',
             tipo: 'area',
             requerido: true,
           },
@@ -497,6 +530,7 @@ export class IncidenciaDetalle {
       },
       (v) => this.api.cambiarEstado(this.id, v.nuevoEstado, v.motivo),
       'Estado actualizado',
+      'La incidencia cambió de estado correctamente.',
     );
   }
 
@@ -504,6 +538,7 @@ export class IncidenciaDetalle {
     this.abrir(
       {
         titulo: 'Cambiar gravedad',
+        confirmar: 'Actualizar gravedad',
         campos: [
           {
             nombre: 'gravedad',
@@ -518,7 +553,7 @@ export class IncidenciaDetalle {
           },
           {
             nombre: 'justificacion',
-            etiqueta: 'Justificación',
+            etiqueta: 'Justificación del cambio',
             tipo: 'area',
             requerido: true,
           },
@@ -526,57 +561,80 @@ export class IncidenciaDetalle {
       },
       (v) => this.api.clasificarGravedad(this.id, v.gravedad, v.justificacion),
       'Gravedad actualizada',
+      'Se modificó el nivel de gravedad del incidente.',
     );
   }
 
-  resolver(): void {
+  async resolver(): Promise<void> {
+    const confirmar = await this.alert.confirmar(
+      '¿Marcar caso como resuelto?',
+      'El caso pasará a estado RESUELTO y quedará listo para la emisión del acta de cierre definitiva.',
+      'Sí, marcar como resuelto'
+    );
+
+    if (!confirmar) return;
+
     this.abrir(
       {
-        titulo: 'Marcar como resuelto',
-        mensaje: 'El caso queda resuelto y a la espera del cierre con acta.',
-        confirmar: 'Marcar como resuelto',
+        titulo: 'Confirmar resolución del caso',
+        mensaje: 'Registra observaciones finales antes del cierre con acta.',
+        confirmar: 'Guardar resolución',
         campos: [
           {
             nombre: 'observaciones',
-            etiqueta: 'Observaciones (opcional)',
+            etiqueta: 'Observaciones de resolución (opcional)',
             tipo: 'area',
           },
         ],
       },
       (v) => this.api.resolver(this.id, v.observaciones || undefined),
       'Caso resuelto',
+      'El incidente se encuentra marcado como resuelto.',
     );
   }
 
   cerrar(): void {
-    this.api.checklistCierre(this.id).subscribe((c) => {
-      const mensaje = c.observacionesPendientes.length
-        ? 'Pendiente antes de cerrar:\n- ' + c.observacionesPendientes.join('\n- ')
-        : 'El cierre es definitivo. Registra el acta y las conclusiones.';
+    this.api.checklistCierre(this.id).subscribe(async (c) => {
+      if (c.observacionesPendientes?.length) {
+        this.alert.aviso(
+          'Antes de cerrar el caso debes subsanar:\n• ' + c.observacionesPendientes.join('\n• '),
+          'Pendientes de Cierre'
+        );
+        return;
+      }
+
+      const confirmado = await this.alert.confirmarPeligro(
+        '¿Cerrar caso definitivamente?',
+        'El cierre del caso es irreversible. Deberás adjuntar el acta y las conclusiones formales.',
+        'Sí, proceder al cierre'
+      );
+
+      if (!confirmado) return;
 
       this.abrir(
         {
-          titulo: 'Cerrar caso',
-          mensaje,
-          confirmar: 'Cerrar caso',
+          titulo: 'Acta y Cierre Definitivo del Caso',
+          mensaje: 'El cierre es formal y definitivo. Registra el acta y las conclusiones institucionales.',
+          confirmar: 'Cerrar caso definitivamente',
           campos: [
             {
               nombre: 'actaCierre',
-              etiqueta: 'Acta de cierre',
+              etiqueta: 'Texto o número del Acta de cierre',
               tipo: 'area',
               requerido: true,
               minimo: 10,
             },
             {
               nombre: 'conclusionesFinales',
-              etiqueta: 'Conclusiones finales',
+              etiqueta: 'Conclusiones y compromisos finales',
               tipo: 'area',
               requerido: true,
             },
           ],
         },
         (v) => this.api.cerrar(this.id, v.actaCierre, v.conclusionesFinales),
-        'Caso cerrado',
+        '¡Caso cerrado!',
+        'El expediente fue formalmente concluido y archivado.',
       );
     });
   }
@@ -585,10 +643,11 @@ export class IncidenciaDetalle {
     this.abrir(
       {
         titulo: 'Registrar derivación a SíSeVe',
+        confirmar: 'Registrar derivación',
         campos: [
           {
             nombre: 'codigoSiseve',
-            etiqueta: 'Código SíSeVe',
+            etiqueta: 'Código SíSeVe emitido por el portal',
             tipo: 'texto',
             requerido: true,
           },
@@ -600,7 +659,7 @@ export class IncidenciaDetalle {
           },
           {
             nombre: 'observaciones',
-            etiqueta: 'Observaciones (opcional)',
+            etiqueta: 'Observaciones de la derivación (opcional)',
             tipo: 'area',
           },
         ],
@@ -613,6 +672,7 @@ export class IncidenciaDetalle {
           v.observaciones || undefined,
         ),
       'Derivación registrada',
+      'El caso quedó formalmente vinculado al portal SíSeVe del MINEDU.',
     );
   }
 }
