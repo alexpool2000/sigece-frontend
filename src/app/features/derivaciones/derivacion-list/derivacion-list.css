@@ -1,0 +1,172 @@
+.cab {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.filtros {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.filtros .buscar {
+    flex: 1 1 320px;
+    min-width: 200px;
+    max-width: 435px;
+}
+
+.tabla {
+    overflow-x: auto;
+    background: var(--mat-sys-surface);
+    border-radius: 12px;
+}
+
+.sin {
+    color: var(--mat-sys-error);
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.reinc {
+    color: #ef6c00;
+}
+
+.vacio {
+    text-align: center;
+    padding: 24px;
+}
+
+.btn-ver {
+    width: 40px;
+    height: 40px;
+    padding: 8px;
+    border: 1px solid #eceef2;
+    border-radius: 50%;
+    background: #f5f6f8;
+}
+
+.btn-ver .mat-mdc-button-persistent-ripple,
+.btn-ver .mat-mdc-button-persistent-ripple::before,
+.btn-ver .mat-mdc-button-ripple,
+.btn-ver .mat-focus-indicator::before {
+    border-radius: 50%;
+}
+
+.btn-ver:hover {
+    background: #eceef2;
+}
+
+.btn-ver:focus-visible {
+    outline: 2px solid #1a73e8;
+    outline-offset: 2px;
+}
+
+.col-acciones {
+    text-align: right;
+    white-space: nowrap;
+}
+
+.btn-derivar {
+    margin-left: 8px;
+}
+
+mat-paginator {
+    margin-top: 12px;
+    margin-bottom: 24px;
+}
+
+/* Modales integrados */
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.dialog {
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 24px;
+    width: 90%;
+    max-width: 480px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.dialog h3 {
+    margin: 0 0 12px 0;
+    font-size: 1.15rem;
+}
+
+.dialog .desc {
+    color: #5f6368;
+    font-size: 0.9rem;
+    margin-bottom: 16px;
+}
+
+.w-full {
+    width: 100%;
+}
+
+.alerta-box {
+    background: #f1f3f4;
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin-bottom: 12px;
+}
+
+.alerta-box.grave {
+    background: #fce8e6;
+    color: #c5221f;
+    border-left: 4px solid #d93025;
+}
+
+.alerta-box p {
+    margin: 4px 0 0 0;
+    font-size: 0.85rem;
+}
+
+.base-legal {
+    font-size: 0.85rem;
+    margin-bottom: 16px;
+    color: #3c4043;
+}
+
+.base-legal .etiqueta {
+    font-weight: 600;
+    display: block;
+}
+
+.acciones-modal {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+
+.chip-gravedad {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: capitalize;
+}
+
+.chip-gravedad.grave {
+    background: #fff3e0;
+    color: #ef6c00;
+}
+
+.chip-gravedad.muy_grave {
+    background: #fce8e6;
+    color: #c5221f;
+}

@@ -11,13 +11,32 @@ import { DashboardFiltro, Indicadores } from '../../../core/models/dashboard.mod
 import { NIVELES } from '../../../core/models/enums';
 import { DashboardApi } from '../../../core/services/dashboard-api';
 
-const COLOR_GRAVEDAD: Record<string, string> = { LEVE: '#2e7d32', MODERADO: '#f9a825', GRAVE: '#ef6c00', MUY_GRAVE: '#c62828' };
-const COLOR_ESTADO: Record<string, string> = {
-  REGISTRADO: '#546e7a', EN_INVESTIGACION: '#1565c0', EN_SEGUIMIENTO: '#6a1b9a',
-  RESUELTO: '#2e7d32', CERRADO: '#37474f',
+const COLOR_GRAVEDAD: Record<string, string> = { 
+  LEVE: '#2e7d32', 
+  MODERADO: '#f9a825', 
+  GRAVE: '#ef6c00', 
+  MUY_GRAVE: '#c62828' 
 };
 
-interface Fila { etiqueta: string; valor: number; ancho: number; color: string; }
+const COLOR_ESTADO: Record<string, string> = {
+  REGISTRADO: '#546e7a', 
+  EN_INVESTIGACION: '#1565c0', 
+  EN_SEGUIMIENTO: '#6a1b9a',
+  RESUELTO: '#2e7d32', 
+  CERRADO: '#37474f',
+};
+
+const MESES: Record<string, string> = {
+  '01': 'Ene', '02': 'Feb', '03': 'Mar', '04': 'Abr', '05': 'May', '06': 'Jun',
+  '07': 'Jul', '08': 'Ago', '09': 'Set', '10': 'Oct', '11': 'Nov', '12': 'Dic'
+};
+
+interface Fila { 
+  etiqueta: string; 
+  valor: number; 
+  ancho: number; 
+  color: string; 
+}
 
 @Component({
   selector: 'app-dashboard',
@@ -30,12 +49,26 @@ export class Dashboard {
   readonly niveles = NIVELES;
   readonly hoy = new Date().toISOString().slice(0, 10);
 
-  filtro = signal<DashboardFiltro>({ fechaDesde: `${new Date().getFullYear()}-01-01`, fechaHasta: this.hoy, nivel: '', grado: '' });
+  filtro = signal<DashboardFiltro>({ 
+    fechaDesde: `${new Date().getFullYear()}-01-01`, 
+    fechaHasta: this.hoy, 
+    nivel: '', 
+    grado: '' 
+  });
+  
   error = signal(false);
 
   datos = toSignal(
     toObservable(this.filtro).pipe(
-      switchMap(f => { this.error.set(false); return this.api.obtener(f).pipe(catchError(() => { this.error.set(true); return of(null as Indicadores | null); })); }),
+      switchMap(f => { 
+        this.error.set(false); 
+        return this.api.obtener(f).pipe(
+          catchError(() => { 
+            this.error.set(true); 
+            return of(null as Indicadores | null); 
+          })
+        ); 
+      }),
     ),
     { initialValue: null as Indicadores | null },
   );
@@ -43,16 +76,35 @@ export class Dashboard {
   gravedad = computed(() => this.filas(this.datos()?.incidentesPorGravedad, COLOR_GRAVEDAD));
   estado = computed(() => this.filas(this.datos()?.incidentesPorEstado, COLOR_ESTADO));
   tipo = computed(() => this.filas(this.datos()?.incidentesPorTipo));
-  mes = computed(() => this.filas(this.datos()?.incidentesPorMes, undefined, true));
+  mes = computed(() => this.filasMes(this.datos()?.incidentesPorMes));
 
-  cambiar(parcial: Partial<DashboardFiltro>) { this.filtro.update(f => ({ ...f, ...parcial })); }
+  cambiar(parcial: Partial<DashboardFiltro>) { 
+    this.filtro.update(f => ({ ...f, ...parcial })); 
+  }
 
-  private filas(mapa?: Record<string, number>, colores?: Record<string, string>, ordenarClave = false): Fila[] {
+  private filas(mapa?: Record<string, number>, colores?: Record<string, string>): Fila[] {
     const entradas = Object.entries(mapa ?? {});
-    if (ordenarClave) entradas.sort(([a], [b]) => a.localeCompare(b));
     const max = Math.max(1, ...entradas.map(([, v]) => v));
     return entradas.map(([k, v]) => ({
-      etiqueta: k.replaceAll('_', ' '), valor: v, ancho: (v / max) * 100, color: colores?.[k] ?? 'var(--mat-sys-primary)',
+      etiqueta: k.replaceAll('_', ' '), 
+      valor: v, 
+      ancho: (v / max) * 100, 
+      color: colores?.[k] ?? '#1976d2',
     }));
+  }
+
+  private filasMes(mapa?: Record<string, number>): Fila[] {
+    const entradas = Object.entries(mapa ?? {}).sort(([a], [b]) => a.localeCompare(b));
+    const max = Math.max(1, ...entradas.map(([, v]) => v));
+    return entradas.map(([k, v]) => {
+      const [anio, numMes] = k.split('-');
+      const etiqueta = numMes && MESES[numMes] ? `${MESES[numMes]} ${anio}` : k;
+      return {
+        etiqueta,
+        valor: v,
+        ancho: (v / max) * 100,
+        color: '#0288d1'
+      };
+    });
   }
 }

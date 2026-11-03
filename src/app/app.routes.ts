@@ -101,7 +101,7 @@ export const routes: Routes = [
       {
         path: 'derivaciones',
         canActivate: [roleGuard],
-        loadComponent: placeholder,
+        loadComponent: () => import('./features/derivaciones/derivacion-list/derivacion-list').then((m) => m.DerivacionList),
         data: { titulo: 'Derivaciones SíSeVe (CU21)', roles: ROL_ADMIN },
       },
 
